@@ -119,7 +119,7 @@ const HeroSection = () => {
             <motion.h1 
               className="font-display text-[100px] md:text-[140px] lg:text-[180px] text-foreground leading-[0.85] tracking-tight mb-8 italic perspective-1000"
             >
-              <div className="overflow-hidden">
+              <div className="overflow-visible">
                 {"ESCAPE".split("").map((letter, i) => (
                   <motion.span
                     key={`escape-${i}`}
@@ -138,7 +138,7 @@ const HeroSection = () => {
                   </motion.span>
                 ))}
               </div>
-              <div className="overflow-hidden">
+              <div className="overflow-visible">
                 {"ROOM".split("").map((letter, i) => (
                   <motion.span
                     key={`room-${i}`}
