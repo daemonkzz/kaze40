@@ -55,18 +55,15 @@ const FAQSection = () => {
                 value={`item-${index}`}
                 className="border-0 mb-3"
               >
-                <AccordionTrigger className="flex items-center justify-between w-full text-left bg-secondary/30 hover:bg-secondary/50 rounded-lg px-6 py-5 transition-all duration-300 group [&>svg]:hidden relative overflow-hidden border-l-2 border-primary/40">
-                  {/* Left gradient glow */}
-                  <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-primary/20 to-transparent pointer-events-none" />
-                  
+                <AccordionTrigger className="flex items-center justify-between w-full text-left rounded-xl px-6 py-5 transition-all duration-300 group [&>svg]:hidden relative overflow-hidden bg-gradient-to-r from-primary/25 via-secondary/40 to-secondary/40 hover:from-primary/30 hover:via-secondary/50 hover:to-secondary/50">
                   <span className="font-display text-sm md:text-base text-foreground tracking-wide pr-4 relative z-10 italic">
                     {item.question}
                   </span>
                   <div className="flex-shrink-0 relative z-10">
-                    <ChevronDown className="w-5 h-5 text-foreground/40 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                    <ChevronDown className="w-5 h-5 text-foreground/50 transition-transform duration-200 group-data-[state=open]:rotate-180" />
                   </div>
                 </AccordionTrigger>
-                <AccordionContent className="bg-secondary/20 rounded-b-lg px-6 pb-5 pt-0 border-l-2 border-primary/20">
+                <AccordionContent className="bg-gradient-to-r from-primary/10 via-secondary/30 to-secondary/30 rounded-b-xl px-6 pb-5 pt-0 -mt-2">
                   <p className="text-foreground/50 text-sm leading-relaxed pt-4">
                     {item.answer}
                   </p>
