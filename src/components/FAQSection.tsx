@@ -47,38 +47,79 @@ const FAQSection = () => {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.08,
-        delayChildren: 0.2,
+        staggerChildren: 0.06,
+        delayChildren: 0.15,
       },
     },
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 20, scale: 0.98 },
+    hidden: { opacity: 0, y: 30, scale: 0.97 },
     visible: { 
       opacity: 1,
       y: 0,
       scale: 1,
-      transition: { duration: 0.4 },
+      transition: { 
+        duration: 0.5,
+        ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number],
+      },
     },
   };
 
   return (
-    <section id="faq" className="py-16 md:py-24 lg:py-28">
+    <section id="faq" className="py-16 md:py-24 lg:py-28 relative overflow-hidden">
+      {/* Background decorative elements */}
+      <div className="absolute inset-0 pointer-events-none">
+        <motion.div
+          className="absolute top-1/4 -left-32 w-64 h-64 rounded-full"
+          style={{
+            background: "radial-gradient(circle, hsl(var(--primary) / 0.08) 0%, transparent 70%)",
+          }}
+          animate={{ 
+            x: [0, 30, 0],
+            opacity: [0.5, 0.8, 0.5],
+          }}
+          transition={{ duration: 8, repeat: Infinity }}
+        />
+        <motion.div
+          className="absolute bottom-1/4 -right-32 w-64 h-64 rounded-full"
+          style={{
+            background: "radial-gradient(circle, hsl(var(--primary) / 0.06) 0%, transparent 70%)",
+          }}
+          animate={{ 
+            x: [0, -30, 0],
+            opacity: [0.4, 0.7, 0.4],
+          }}
+          transition={{ duration: 10, repeat: Infinity, delay: 2 }}
+        />
+      </div>
+
       <motion.div 
         ref={sectionRef}
-        className="container mx-auto px-6"
+        className="container mx-auto px-6 relative z-10"
         initial="hidden"
         animate={isVisible ? "visible" : "hidden"}
       >
         {/* Section Title */}
         <motion.div 
           className="text-center mb-14"
-          initial={{ opacity: 0, y: 30 }}
-          animate={isVisible ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.6 }}
+          initial={{ opacity: 0, y: 30, scale: 0.9 }}
+          animate={isVisible ? { opacity: 1, y: 0, scale: 1 } : {}}
+          transition={{ duration: 0.7, ease: "easeOut" }}
         >
-          <h2 className="font-display text-[60px] md:text-[80px] text-foreground tracking-tight">FAQ</h2>
+          <motion.h2 
+            className="font-display text-[60px] md:text-[80px] text-foreground tracking-tight"
+            animate={isVisible ? {
+              textShadow: [
+                "0 0 0px transparent",
+                "0 0 30px hsl(var(--primary) / 0.3)",
+                "0 0 0px transparent",
+              ],
+            } : {}}
+            transition={{ duration: 3, repeat: Infinity }}
+          >
+            FAQ
+          </motion.h2>
         </motion.div>
 
         {/* FAQ Accordion */}

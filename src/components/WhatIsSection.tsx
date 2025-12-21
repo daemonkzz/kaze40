@@ -11,18 +11,40 @@ const WhatIsSection = () => {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.15,
-        delayChildren: 0.2,
+        staggerChildren: 0.12,
+        delayChildren: 0.15,
       },
     },
   };
 
   const itemVariants: Variants = {
-    hidden: { opacity: 0, y: 40 },
+    hidden: { opacity: 0, y: 50, scale: 0.95 },
     visible: { 
       opacity: 1, 
       y: 0,
-      transition: { duration: 0.6 },
+      scale: 1,
+      transition: { 
+        duration: 0.7,
+        ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number],
+      },
+    },
+  };
+
+  const cardHoverVariants = {
+    rest: { scale: 1, y: 0 },
+    hover: { 
+      scale: 1.03, 
+      y: -8,
+      transition: { duration: 0.3, ease: "easeOut" },
+    },
+  };
+
+  const iconVariants = {
+    rest: { rotate: 0, scale: 1 },
+    hover: { 
+      rotate: [0, -10, 10, 0],
+      scale: 1.2,
+      transition: { duration: 0.5 },
     },
   };
 
@@ -218,15 +240,27 @@ const WhatIsSection = () => {
             <div className="col-span-7 flex flex-col gap-5 pt-8">
               {/* Top Card - aligned right */}
               <motion.div 
-                className="relative bg-[#222222] rounded-2xl p-6 border border-white/[0.06] cursor-pointer overflow-hidden ml-auto w-[320px]"
+                className="relative bg-[#222222] rounded-2xl p-6 border border-white/[0.06] cursor-pointer overflow-hidden ml-auto w-[320px] group"
                 variants={itemVariants}
-                whileHover={{ y: -4 }}
-                transition={{ duration: 0.3 }}
+                initial="rest"
+                whileHover="hover"
+                animate="rest"
               >
-                <div className="w-8 h-8 flex items-center justify-center mb-4">
+                {/* Hover glow */}
+                <motion.div 
+                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-2xl"
+                  style={{
+                    background: "radial-gradient(circle at 50% 0%, hsl(var(--primary) / 0.2) 0%, transparent 60%)",
+                    boxShadow: "inset 0 1px 0 0 hsl(var(--primary) / 0.3)",
+                  }}
+                />
+                <motion.div 
+                  className="w-8 h-8 flex items-center justify-center mb-4 relative z-10"
+                  variants={iconVariants}
+                >
                   <Puzzle className="w-6 h-6 text-primary" />
-                </div>
-                <p className="text-foreground/60 text-xs leading-relaxed">
+                </motion.div>
+                <p className="text-foreground/60 text-xs leading-relaxed relative z-10">
                   You'll find yourself inside a mysterious space where logic is your main tool and intuition helps you survive. Everything here is not what it seems
                 </p>
               </motion.div>
@@ -235,22 +269,38 @@ const WhatIsSection = () => {
               <div className="grid grid-cols-2 gap-5">
                 {/* Card with diagonal gradient */}
                 <motion.div 
-                  className="relative bg-[#222222] rounded-2xl p-5 border border-white/[0.06] cursor-pointer overflow-hidden"
+                  className="relative bg-[#222222] rounded-2xl p-5 border border-white/[0.06] cursor-pointer overflow-hidden group"
                   variants={itemVariants}
-                  whileHover={{ y: -4 }}
-                  transition={{ duration: 0.3 }}
+                  initial="rest"
+                  whileHover="hover"
+                  animate="rest"
                 >
                   {/* Diagonal yellow gradient overlay */}
-                  <div 
+                  <motion.div 
                     className="absolute inset-0 pointer-events-none"
                     style={{
                       background: "linear-gradient(135deg, transparent 0%, transparent 40%, hsl(var(--primary) / 0.12) 70%, hsl(var(--primary) / 0.25) 100%)",
                     }}
+                    initial={{ opacity: 0.7 }}
+                    whileHover={{ opacity: 1, scale: 1.05 }}
+                    transition={{ duration: 0.4 }}
+                  />
+                  {/* Shimmer effect on hover */}
+                  <motion.div 
+                    className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100"
+                    style={{
+                      background: "linear-gradient(90deg, transparent 0%, hsl(var(--primary) / 0.15) 50%, transparent 100%)",
+                    }}
+                    animate={{ x: ["-100%", "200%"] }}
+                    transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 1 }}
                   />
                   
-                  <div className="w-7 h-7 flex items-center justify-center mb-3 relative z-10">
+                  <motion.div 
+                    className="w-7 h-7 flex items-center justify-center mb-3 relative z-10"
+                    variants={iconVariants}
+                  >
                     <Zap className="w-5 h-5 text-primary" />
-                  </div>
+                  </motion.div>
                   <p className="text-foreground/55 text-[11px] leading-relaxed relative z-10">
                     You're not entering a game — you're entering a different universe. Portal X changes your perception from the first seconds
                   </p>
@@ -258,15 +308,26 @@ const WhatIsSection = () => {
 
                 {/* Dark card */}
                 <motion.div 
-                  className="bg-[#222222] rounded-2xl p-5 border border-white/[0.06] cursor-pointer"
+                  className="bg-[#222222] rounded-2xl p-5 border border-white/[0.06] cursor-pointer relative overflow-hidden group"
                   variants={itemVariants}
-                  whileHover={{ y: -4 }}
-                  transition={{ duration: 0.3 }}
+                  initial="rest"
+                  whileHover="hover"
+                  animate="rest"
                 >
-                  <div className="w-7 h-7 flex items-center justify-center mb-3">
+                  {/* Hover glow */}
+                  <motion.div 
+                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-2xl"
+                    style={{
+                      background: "radial-gradient(circle at 50% 100%, hsl(var(--primary) / 0.15) 0%, transparent 60%)",
+                    }}
+                  />
+                  <motion.div 
+                    className="w-7 h-7 flex items-center justify-center mb-3 relative z-10"
+                    variants={iconVariants}
+                  >
                     <Key className="w-5 h-5 text-primary" />
-                  </div>
-                  <p className="text-foreground/55 text-[11px] leading-relaxed">
+                  </motion.div>
+                  <p className="text-foreground/55 text-[11px] leading-relaxed relative z-10">
                     Every detail is key. Careful attention will determine whether you find a way out or remain part of the system forever.
                   </p>
                 </motion.div>

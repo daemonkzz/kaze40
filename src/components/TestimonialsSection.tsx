@@ -50,17 +50,53 @@ const TestimonialsSection = () => {
 
   return (
     <section id="testimonials" className="py-16 md:py-24 lg:py-28 relative overflow-hidden">
-      <div ref={sectionRef} className="container mx-auto px-6">
+      {/* Ambient background effects */}
+      <div className="absolute inset-0 pointer-events-none">
+        <motion.div
+          className="absolute top-0 left-1/4 w-[500px] h-[500px] rounded-full"
+          style={{
+            background: "radial-gradient(circle, hsl(var(--primary) / 0.05) 0%, transparent 60%)",
+          }}
+          animate={{ 
+            x: [0, 50, 0],
+            y: [0, 30, 0],
+          }}
+          transition={{ duration: 15, repeat: Infinity }}
+        />
+        <motion.div
+          className="absolute bottom-0 right-1/4 w-[400px] h-[400px] rounded-full"
+          style={{
+            background: "radial-gradient(circle, hsl(var(--primary) / 0.04) 0%, transparent 60%)",
+          }}
+          animate={{ 
+            x: [0, -40, 0],
+            y: [0, -30, 0],
+          }}
+          transition={{ duration: 12, repeat: Infinity, delay: 3 }}
+        />
+      </div>
+
+      <div ref={sectionRef} className="container mx-auto px-6 relative z-10">
         {/* Section Title */}
         <motion.div
           className="text-center mb-12"
-          initial={{ opacity: 0, y: 50 }}
-          animate={isVisible ? { opacity: 1, y: 0 } : {}}
+          initial={{ opacity: 0, y: 50, scale: 0.95 }}
+          animate={isVisible ? { opacity: 1, y: 0, scale: 1 } : {}}
           transition={{ duration: 0.8, ease: "easeOut" }}
         >
-          <h2 className="font-display text-[50px] md:text-[70px] lg:text-[90px] text-foreground leading-[0.9] tracking-tight italic">
+          <motion.h2 
+            className="font-display text-[50px] md:text-[70px] lg:text-[90px] text-foreground leading-[0.9] tracking-tight italic"
+            animate={isVisible ? {
+              textShadow: [
+                "0 0 0px transparent",
+                "0 0 40px hsl(var(--primary) / 0.2)",
+                "0 0 0px transparent",
+              ],
+            } : {}}
+            transition={{ duration: 4, repeat: Infinity }}
+          >
             THEY'LL TELL<br />YOU BETTER
-          </h2>
+          </motion.h2>
         </motion.div>
 
         {/* Testimonial Cards - Animated Carousel */}
