@@ -51,7 +51,7 @@ const HeroSection = () => {
       }
     })
   };
-  return <section ref={sectionRef} className="relative min-h-screen flex items-end overflow-hidden pb-8">
+  return <section ref={sectionRef} className="relative min-h-screen flex lg:items-end items-start overflow-hidden pb-8 pt-32 lg:pt-0">
       {/* Floating Particles */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-[5]">
         {particles.map(particle => <motion.div key={particle.id} className="absolute rounded-full bg-primary/30" style={{
@@ -230,7 +230,7 @@ const HeroSection = () => {
         </div>
 
         {/* Mobile Layout */}
-        <div className="lg:hidden pb-8">
+        <div className="lg:hidden pb-8 pt-8">
           {/* Title */}
           <motion.div style={{ y: textY }}>
             <motion.h1 className="font-display text-[70px] sm:text-[90px] md:text-[120px] text-foreground leading-[0.85] tracking-tight mb-6 italic perspective-1000">
