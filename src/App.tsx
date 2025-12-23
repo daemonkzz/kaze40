@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Kurallar from "./pages/Kurallar";
+import Guncellemeler from "./pages/Guncellemeler";
 import NotFound from "./pages/NotFound";
 import AmbientParticles from "./components/AmbientParticles";
 
@@ -20,6 +21,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/kurallar" element={<Kurallar />} />
+          <Route path="/guncellemeler" element={<Guncellemeler />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

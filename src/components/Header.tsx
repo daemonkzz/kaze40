@@ -104,17 +104,20 @@ const Header = () => {
                   Kurallar
                 </Link>
               </motion.div>
-              <motion.a 
-                href="#güncellemeler" 
-                className="text-foreground/50 hover:text-foreground transition-colors text-[11px] tracking-wider font-light italic"
+              <motion.div
                 variants={navLinkVariants}
                 initial="initial"
                 animate="animate"
                 whileHover="hover"
                 transition={{ delay: 0.4 }}
               >
-                Güncellemeler
-              </motion.a>
+                <Link 
+                  to="/guncellemeler"
+                  className="text-foreground/50 hover:text-foreground transition-colors text-[11px] tracking-wider font-light italic"
+                >
+                  Güncellemeler
+                </Link>
+              </motion.div>
 
               {/* Center Logo */}
               <motion.a 
@@ -210,7 +213,20 @@ const Header = () => {
                   Kurallar
                 </Link>
               </motion.div>
-              {["Güncellemeler", "Hikaye", "Harita"].map((link, index) => (
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <Link 
+                  to="/guncellemeler"
+                  className="block py-3 px-4 text-foreground/70 hover:text-primary transition-colors text-sm"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Güncellemeler
+                </Link>
+              </motion.div>
+              {["Hikaye", "Harita"].map((link, index) => (
                 <motion.a 
                   key={link}
                   href={`#${link.toLowerCase()}`} 
@@ -218,7 +234,7 @@ const Header = () => {
                   onClick={() => setIsMenuOpen(false)}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: (index + 2) * 0.1 }}
+                  transition={{ delay: (index + 3) * 0.1 }}
                 >
                   {link}
                 </motion.a>
