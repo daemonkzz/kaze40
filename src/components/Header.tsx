@@ -132,7 +132,7 @@ const Header = () => {
           >
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Button variant="glow" size="sm" className="text-[11px] px-5 h-8 rounded-sm font-medium">
-                Book now <span className="ml-1.5">↗</span>
+                Başvur <span className="ml-1.5">↗</span>
               </Button>
             </motion.div>
           </motion.div>
