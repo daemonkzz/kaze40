@@ -77,12 +77,8 @@ const HeroSection = () => {
       y: backgroundY,
       scale: backgroundScale
     }}>
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-background/20" />
-        <div className="absolute inset-0 bg-gradient-to-r from-background/50 via-transparent to-background/50" />
-        {/* Vignette effect */}
-        <div className="absolute inset-0" style={{
-        background: "radial-gradient(ellipse at center, transparent 0%, hsl(var(--background) / 0.4) 70%, hsl(var(--background) / 0.8) 100%)"
-      }} />
+        {/* Bottom fade only - 5% height */}
+        <div className="absolute bottom-0 left-0 right-0 h-[5%] bg-gradient-to-t from-background to-transparent" />
       </motion.div>
 
       {/* Animated light rays */}
