@@ -1,7 +1,8 @@
 import { motion, useScroll, useTransform, useSpring } from "framer-motion";
 import { useRef, useMemo } from "react";
 import heroBg from "@/assets/hero-bg.jpg";
-import hourglassIcon from "@/assets/hourglass-icon.png";
+import logo from "@/assets/logo.png";
+import { Button } from "@/components/ui/button";
 
 // Generate floating particles
 const generateFloatingParticles = (count: number) => {
@@ -131,21 +132,20 @@ const HeroSection = () => {
                   </motion.span>)}
               </div>
             </motion.h1>
-            <motion.p className="text-foreground/40 text-[11px] max-w-[200px] leading-relaxed" initial={{
-            opacity: 0,
-            y: 20
-          }} animate={{
-            opacity: 1,
-            y: 0
-          }} transition={{
-            duration: 0.8,
-            delay: 1.5
-          }}>
-              Step into a world of puzzles, traps, and unexpected twists — an escape room that won't let you go until the very end
-            </motion.p>
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              transition={{ duration: 0.8, delay: 1.5 }}
+            >
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button variant="glow" size="lg" className="text-sm px-8 font-medium">
+                  Başvur <span className="ml-1.5">↗</span>
+                </Button>
+              </motion.div>
+            </motion.div>
           </motion.div>
 
-          {/* Right Content - Quest Card */}
+          {/* Right Content - Server Status Card */}
           <motion.div initial={{
           opacity: 0,
           y: 50,
@@ -158,7 +158,7 @@ const HeroSection = () => {
           duration: 0.8,
           delay: 1.2
         }}>
-            <motion.div className="bg-card/80 backdrop-blur-sm border border-border/30 rounded-2xl p-4 inline-flex items-start gap-4 min-w-[180px] relative overflow-hidden" whileHover={{
+            <motion.div className="bg-card/80 backdrop-blur-sm border border-border/30 rounded-2xl p-4 min-w-[200px] relative overflow-hidden" whileHover={{
             scale: 1.05,
             y: -5,
             boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 40px hsl(var(--primary) / 0.2)",
@@ -177,38 +177,52 @@ const HeroSection = () => {
               repeatDelay: 3
             }} />
               
-              <div className="flex-1 relative z-10">
-                <motion.div className="bg-primary text-primary-foreground text-[9px] font-medium px-2 py-0.5 rounded inline-block mb-2 uppercase tracking-wider" animate={{
-                boxShadow: ["0 0 0px hsl(var(--primary) / 0)", "0 0 20px hsl(var(--primary) / 0.6)", "0 0 0px hsl(var(--primary) / 0)"]
-              }} transition={{
-                duration: 2,
-                repeat: Infinity
-              }}>
-                  New Quest
-                </motion.div>
-                <h3 className="font-display text-xl text-foreground leading-tight tracking-wide">
-                  THE LAST<br />HOUR
-                </h3>
-                <motion.span className="text-primary text-lg mt-1 inline-block" animate={{
-                x: [0, 8, 0],
-                scale: [1, 1.1, 1]
-              }} transition={{
-                duration: 1.5,
-                repeat: Infinity
-              }}>
-                  ↗
-                </motion.span>
-              </div>
-              <div className="w-16 h-20 flex items-center justify-center relative z-10">
-                <motion.img src={hourglassIcon} alt="Hourglass" className="w-14 h-14 object-contain" animate={{
-                y: [0, -10, 0],
-                rotate: [0, 8, 0, -8, 0],
-                filter: ["drop-shadow(0 0 10px hsl(var(--primary) / 0.3))", "drop-shadow(0 0 25px hsl(var(--primary) / 0.6))", "drop-shadow(0 0 10px hsl(var(--primary) / 0.3))"]
-              }} transition={{
-                duration: 4,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }} />
+              <div className="relative z-10">
+                {/* Header with logo */}
+                <div className="flex items-center gap-3 mb-3">
+                  <img src={logo} alt="Logo" className="w-10 h-10 object-contain" />
+                  <div>
+                    <motion.div className="bg-primary text-primary-foreground text-[9px] font-medium px-2 py-0.5 rounded inline-block uppercase tracking-wider" animate={{
+                      boxShadow: ["0 0 0px hsl(var(--primary) / 0)", "0 0 20px hsl(var(--primary) / 0.6)", "0 0 0px hsl(var(--primary) / 0)"]
+                    }} transition={{
+                      duration: 2,
+                      repeat: Infinity
+                    }}>
+                      Sunucu Durumu
+                    </motion.div>
+                  </div>
+                </div>
+                
+                {/* Status */}
+                <div className="flex items-center gap-2 mb-3">
+                  <motion.div 
+                    className="w-2.5 h-2.5 rounded-full bg-primary"
+                    animate={{
+                      boxShadow: ["0 0 0px hsl(var(--primary) / 0)", "0 0 12px hsl(var(--primary) / 0.8)", "0 0 0px hsl(var(--primary) / 0)"]
+                    }}
+                    transition={{
+                      duration: 1.5,
+                      repeat: Infinity
+                    }}
+                  />
+                  <span className="text-foreground text-sm font-medium">Aktif</span>
+                </div>
+                
+                {/* Player count bar */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-[10px] text-foreground/60">
+                    <span>Oyuncu Sayısı</span>
+                    <span className="text-primary font-medium">75/300</span>
+                  </div>
+                  <div className="h-2 bg-background/50 rounded-full overflow-hidden">
+                    <motion.div 
+                      className="h-full bg-gradient-to-r from-primary to-primary/70 rounded-full"
+                      initial={{ width: 0 }}
+                      animate={{ width: "25%" }}
+                      transition={{ duration: 1, delay: 1.5, ease: "easeOut" }}
+                    />
+                  </div>
+                </div>
               </div>
             </motion.div>
           </motion.div>
