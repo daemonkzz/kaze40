@@ -219,30 +219,6 @@ const HeroSection = () => {
         </div>
       </motion.div>
 
-      {/* Large X on floor - positioned center bottom */}
-      <motion.div className="absolute bottom-0 left-1/2 -translate-x-1/2 pointer-events-none" initial={{
-      opacity: 0,
-      scale: 0.5
-    }} animate={{
-      opacity: 0.3,
-      scale: 1
-    }} transition={{
-      duration: 1,
-      delay: 1.5
-    }}>
-        <motion.div className="text-primary font-display text-[250px] md:text-[350px] leading-none" animate={{
-        opacity: [0.2, 0.4, 0.2],
-        textShadow: ["0 0 40px hsl(var(--primary) / 0.3), 0 0 80px hsl(var(--primary) / 0.2)", "0 0 80px hsl(var(--primary) / 0.6), 0 0 120px hsl(var(--primary) / 0.4)", "0 0 40px hsl(var(--primary) / 0.3), 0 0 80px hsl(var(--primary) / 0.2)"],
-        scale: [1, 1.02, 1]
-      }} transition={{
-        duration: 4,
-        repeat: Infinity,
-        ease: "easeInOut"
-      }}>
-          ✕
-        </motion.div>
-      </motion.div>
-
       {/* Bottom gradient overlay */}
       <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent pointer-events-none" />
     </section>;
