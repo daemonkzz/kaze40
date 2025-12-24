@@ -78,27 +78,35 @@ const clearSession = () => {
 export const AdminSessionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [admin2FASettings, setAdmin2FASettings] = useState<Admin2FASettings | null>(null);
   const [remainingTime, setRemainingTime] = useState<number | null>(null);
 
-  // Check stored session on mount and when user changes
+  // Check stored session when auth state settles (avoid clearing on initial refresh)
   useEffect(() => {
+    if (authLoading) return;
+
     if (user) {
       const hasValidSession = getStoredSession(user.id);
-      if (hasValidSession) {
-        setIsAdminAuthenticated(true);
+      setIsAdminAuthenticated(hasValidSession);
+
+      if (!hasValidSession) {
+        // Expired/wrong user session, keep storage clean
+        clearSession();
       }
     } else {
       setIsAdminAuthenticated(false);
       clearSession();
     }
-  }, [user]);
+  }, [user, authLoading]);
 
   // Fetch user's 2FA settings
   const fetch2FASettings = useCallback(async () => {
+    // Wait until auth state is resolved; otherwise refresh (F5) briefly looks like "no user"
+    if (authLoading) return;
+
     if (!user) {
       setAdmin2FASettings(null);
       setIsLoading(false);
@@ -122,7 +130,7 @@ export const AdminSessionProvider: React.FC<{ children: React.ReactNode }> = ({ 
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [user, authLoading]);
 
   useEffect(() => {
     fetch2FASettings();
