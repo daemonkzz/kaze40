@@ -26,8 +26,10 @@ import {
   ChevronDown,
   Bold,
   Italic,
+  FolderOpen,
 } from 'lucide-react';
 import type { ContentBlock } from '@/types/update';
+import { GalleryPickerModal } from './GalleryPickerModal';
 
 interface RichTextEditorProps {
   content: ContentBlock[];
@@ -48,6 +50,8 @@ const blockTypeLabels: Record<BlockType, { label: string; icon: React.ReactNode 
 
 export const RichTextEditor = ({ content, onChange }: RichTextEditorProps) => {
   const [newBlockType, setNewBlockType] = useState<BlockType>('paragraph');
+  const [galleryPickerOpen, setGalleryPickerOpen] = useState(false);
+  const [activeImageBlockId, setActiveImageBlockId] = useState<string | null>(null);
 
   const generateId = () => Math.random().toString(36).substring(2, 9);
 
@@ -71,6 +75,38 @@ export const RichTextEditor = ({ content, onChange }: RichTextEditorProps) => {
 
   const removeBlock = (id: string) => {
     onChange(content.filter((block) => block.id !== id));
+  };
+
+  const openGalleryPicker = (blockId: string) => {
+    setActiveImageBlockId(blockId);
+    setGalleryPickerOpen(true);
+  };
+
+  const handleGallerySelect = (urls: string[]) => {
+    if (urls.length === 0 || !activeImageBlockId) return;
+
+    const currentIndex = content.findIndex((b) => b.id === activeImageBlockId);
+    if (currentIndex === -1) return;
+
+    // Update the current block with the first image
+    const updatedContent = content.map((block) =>
+      block.id === activeImageBlockId ? { ...block, content: urls[0] } : block
+    );
+
+    // If multiple images selected, create new blocks for the rest
+    if (urls.length > 1) {
+      const newBlocks: ContentBlock[] = urls.slice(1).map((url) => ({
+        id: generateId(),
+        type: 'image' as const,
+        content: url,
+      }));
+
+      // Insert new blocks right after the current block
+      updatedContent.splice(currentIndex + 1, 0, ...newBlocks);
+    }
+
+    onChange(updatedContent);
+    setActiveImageBlockId(null);
   };
 
   const moveBlock = (id: string, direction: 'up' | 'down') => {
@@ -282,11 +318,22 @@ export const RichTextEditor = ({ content, onChange }: RichTextEditorProps) => {
             {/* Image */}
             {block.type === 'image' && (
               <div className="space-y-2">
-                <Input
-                  value={block.content as string}
-                  onChange={(e) => updateBlock(block.id, { content: e.target.value })}
-                  placeholder="Görsel URL'si..."
-                />
+                <div className="flex gap-2">
+                  <Input
+                    value={block.content as string}
+                    onChange={(e) => updateBlock(block.id, { content: e.target.value })}
+                    placeholder="Görsel URL'si..."
+                    className="flex-1"
+                  />
+                  <Button
+                    variant="outline"
+                    onClick={() => openGalleryPicker(block.id)}
+                    className="shrink-0"
+                  >
+                    <FolderOpen className="w-4 h-4 mr-1" />
+                    Galeriden Seç
+                  </Button>
+                </div>
                 {block.content && (
                   <div className="relative aspect-video rounded-lg overflow-hidden bg-muted max-w-md">
                     <img
@@ -376,6 +423,13 @@ export const RichTextEditor = ({ content, onChange }: RichTextEditorProps) => {
           ))}
         </div>
       </div>
+
+      {/* Gallery Picker Modal */}
+      <GalleryPickerModal
+        open={galleryPickerOpen}
+        onClose={() => setGalleryPickerOpen(false)}
+        onSelect={handleGallerySelect}
+      />
     </div>
   );
 };
