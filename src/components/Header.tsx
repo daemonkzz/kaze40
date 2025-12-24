@@ -4,10 +4,12 @@ import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import AnimatedLogo from "@/components/AnimatedLogo";
+import LoginModal from "@/components/LoginModal";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -169,7 +171,12 @@ const Header = () => {
             transition={{ delay: 0.6 }}
           >
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button variant="glow" size="sm" className="text-[11px] px-5 h-8 rounded-sm font-medium">
+              <Button 
+                variant="glow" 
+                size="sm" 
+                className="text-[11px] px-5 h-8 rounded-sm font-medium"
+                onClick={() => setIsLoginModalOpen(true)}
+              >
                 Giriş Yap <span className="ml-1.5">↗</span>
               </Button>
             </motion.div>
@@ -255,7 +262,15 @@ const Header = () => {
                 Harita
               </motion.a>
               <div className="px-4 pt-2">
-                <Button variant="glow" size="sm" className="w-full">
+                <Button 
+                  variant="glow" 
+                  size="sm" 
+                  className="w-full"
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    setIsLoginModalOpen(true);
+                  }}
+                >
                   Giriş Yap ↗
                 </Button>
               </div>
@@ -263,6 +278,9 @@ const Header = () => {
           )}
         </AnimatePresence>
       </div>
+      
+      {/* Login Modal */}
+      <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
     </motion.header>
   );
 };
