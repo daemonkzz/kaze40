@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
-  ArrowLeft,
   Loader2,
   Save,
   Plus,
@@ -40,6 +38,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 import type { MainCategory, SubCategory, Rule } from '@/types/rules';
 
 // Default rules data to import (no lastUpdate - will be set when edited)
@@ -223,11 +222,8 @@ const defaultRulesData: MainCategory[] = [
   },
 ];
 
-const RulesEditor = () => {
-  const navigate = useNavigate();
-  const { user, isLoading: authLoading } = useAuth();
-  const [isAuthorized, setIsAuthorized] = useState(false);
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+const RulesEditorContent = () => {
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('editor');
@@ -248,45 +244,10 @@ const RulesEditor = () => {
   const [previewExpandedCats, setPreviewExpandedCats] = useState<string[]>([]);
   const [previewExpandedSubs, setPreviewExpandedSubs] = useState<string[]>([]);
 
-  // Check admin role
-  useEffect(() => {
-    const checkAdminRole = async () => {
-      if (authLoading) return;
-      
-      if (!user) {
-        toast.error('Bu sayfaya erişmek için giriş yapmalısınız');
-        navigate('/');
-        return;
-      }
-
-      try {
-        const { data: hasAdminRole, error } = await supabase
-          .rpc('has_role', { _user_id: user.id, _role: 'admin' });
-
-        if (error || !hasAdminRole) {
-          toast.error('Bu sayfaya erişim yetkiniz yok');
-          navigate('/');
-          return;
-        }
-
-        setIsAuthorized(true);
-      } catch (error) {
-        console.error('Auth check error:', error);
-        navigate('/');
-      } finally {
-        setIsCheckingAuth(false);
-      }
-    };
-
-    checkAdminRole();
-  }, [user, authLoading, navigate]);
-
   // Load rules data
   useEffect(() => {
-    if (isAuthorized) {
-      loadRules();
-    }
-  }, [isAuthorized]);
+    loadRules();
+  }, []);
 
   const loadRules = async () => {
     setIsLoading(true);
@@ -397,46 +358,40 @@ const RulesEditor = () => {
   };
 
   const updateSubCategory = (categoryId: string, subCategoryId: string, updates: Partial<SubCategory>) => {
-    setCategories(categories.map(cat => {
-      if (cat.id !== categoryId) return cat;
-      return {
-        ...cat,
-        subCategories: cat.subCategories.map(sub =>
-          sub.id === subCategoryId ? { ...sub, ...updates } : sub
-        ),
-      };
-    }));
+    const category = categories.find(c => c.id === categoryId);
+    if (!category) return;
+
+    updateCategory(categoryId, {
+      subCategories: category.subCategories.map(sub =>
+        sub.id === subCategoryId ? { ...sub, ...updates } : sub
+      ),
+    });
   };
 
   const deleteSubCategory = (categoryId: string, subCategoryId: string) => {
-    setCategories(categories.map(cat => {
-      if (cat.id !== categoryId) return cat;
-      return {
-        ...cat,
-        subCategories: cat.subCategories.filter(sub => sub.id !== subCategoryId),
-      };
-    }));
+    const category = categories.find(c => c.id === categoryId);
+    if (!category) return;
+
+    updateCategory(categoryId, {
+      subCategories: category.subCategories.filter(sub => sub.id !== subCategoryId),
+    });
     setDeleteConfirm(null);
   };
 
   // Rule operations
   const addRule = (categoryId: string, subCategoryId: string) => {
     const category = categories.find(c => c.id === categoryId);
-    const subCategory = category?.subCategories.find(s => s.id === subCategoryId);
+    if (!category) return;
+
+    const subCategory = category.subCategories.find(s => s.id === subCategoryId);
     if (!subCategory) return;
 
     const newId = `${subCategoryId}.${subCategory.rules.length + 1}`;
-    const today = new Date().toLocaleDateString('tr-TR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
-
     const newRule: Rule = {
       id: newId,
       title: 'Yeni Kural',
-      description: 'Kural açıklaması buraya yazılacak.',
-      lastUpdate: today,
+      description: 'Kural açıklaması...',
+      lastUpdate: '',
     };
 
     updateSubCategory(categoryId, subCategoryId, {
@@ -446,65 +401,39 @@ const RulesEditor = () => {
   };
 
   const updateRule = (categoryId: string, subCategoryId: string, ruleId: string, updates: Partial<Rule>) => {
-    setCategories(categories.map(cat => {
-      if (cat.id !== categoryId) return cat;
-      return {
-        ...cat,
-        subCategories: cat.subCategories.map(sub => {
-          if (sub.id !== subCategoryId) return sub;
-          return {
-            ...sub,
-            rules: sub.rules.map(rule => {
-              if (rule.id !== ruleId) return rule;
-              
-              // Find original rule for comparison
-              const originalCat = originalCategories.find(c => c.id === categoryId);
-              const originalSub = originalCat?.subCategories.find(s => s.id === subCategoryId);
-              const originalRule = originalSub?.rules.find(r => r.id === ruleId);
-              
-              // Check if content actually changed
-              const newTitle = updates.title ?? rule.title;
-              const newDescription = updates.description ?? rule.description;
-              const hasContentChanged = 
-                newTitle !== originalRule?.title || 
-                newDescription !== originalRule?.description;
-              
-              // Only update lastUpdate if content changed
-              const today = new Date().toLocaleDateString('tr-TR', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-              });
-              
-              return { 
-                ...rule, 
-                ...updates, 
-                lastUpdate: hasContentChanged ? today : rule.lastUpdate 
-              };
-            }),
-          };
-        }),
-      };
-    }));
+    const category = categories.find(c => c.id === categoryId);
+    if (!category) return;
+
+    const subCategory = category.subCategories.find(s => s.id === subCategoryId);
+    if (!subCategory) return;
+
+    // Add lastUpdate when editing
+    const updatesWithDate = {
+      ...updates,
+      lastUpdate: new Date().toISOString(),
+    };
+
+    updateSubCategory(categoryId, subCategoryId, {
+      rules: subCategory.rules.map(rule =>
+        rule.id === ruleId ? { ...rule, ...updatesWithDate } : rule
+      ),
+    });
   };
 
   const deleteRule = (categoryId: string, subCategoryId: string, ruleId: string) => {
-    setCategories(categories.map(cat => {
-      if (cat.id !== categoryId) return cat;
-      return {
-        ...cat,
-        subCategories: cat.subCategories.map(sub => {
-          if (sub.id !== subCategoryId) return sub;
-          return {
-            ...sub,
-            rules: sub.rules.filter(rule => rule.id !== ruleId),
-          };
-        }),
-      };
-    }));
+    const category = categories.find(c => c.id === categoryId);
+    if (!category) return;
+
+    const subCategory = category.subCategories.find(s => s.id === subCategoryId);
+    if (!subCategory) return;
+
+    updateSubCategory(categoryId, subCategoryId, {
+      rules: subCategory.rules.filter(rule => rule.id !== ruleId),
+    });
     setDeleteConfirm(null);
   };
 
+  // Toggle functions
   const toggleCategory = (id: string) => {
     const newSet = new Set(expandedCategories);
     if (newSet.has(id)) {
@@ -525,482 +454,427 @@ const RulesEditor = () => {
     setExpandedSubCategories(newSet);
   };
 
+  // Preview toggles
+  const togglePreviewCat = (id: string) => {
+    setPreviewExpandedCats(prev => 
+      prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
+    );
+  };
+
+  const togglePreviewSub = (id: string) => {
+    setPreviewExpandedSubs(prev => 
+      prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]
+    );
+  };
+
+  // Format date
   const formatDate = (dateString: string) => {
+    if (!dateString) return '';
     return new Date(dateString).toLocaleDateString('tr-TR', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
     });
   };
 
-  // Count total rules
-  const totalRules = categories.reduce((acc, cat) =>
+  // Count stats
+  const totalCategories = categories.length;
+  const totalSubCategories = categories.reduce((acc, cat) => acc + cat.subCategories.length, 0);
+  const totalRules = categories.reduce((acc, cat) => 
     acc + cat.subCategories.reduce((subAcc, sub) => subAcc + sub.rules.length, 0), 0
   );
 
-  // Preview toggle functions
-  const togglePreviewCategory = (id: string) => {
-    setPreviewExpandedCats(prev =>
-      prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
-    );
-  };
-
-  const togglePreviewSubCategory = (id: string) => {
-    setPreviewExpandedSubs(prev =>
-      prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
-    );
-  };
-
-  if (authLoading || isCheckingAuth) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="flex items-center justify-center py-20">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
 
-  if (!isAuthorized) return null;
-
   return (
-    <div className="min-h-screen bg-background">
+    <div className="p-8">
       {/* Header */}
-      <header className="bg-card border-b border-border sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate('/admin')}
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Admin Panel
-              </Button>
-              <div className="h-6 w-px bg-border" />
-              <div>
-                <h1 className="text-xl font-bold text-foreground">Kurallar Editörü</h1>
-                <p className="text-sm text-muted-foreground">
-                  {categories.length} ana kategori, {totalRules} kural
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4">
-              {lastUpdated && (
-                <span className="text-sm text-muted-foreground">
-                  Son güncelleme: {formatDate(lastUpdated)}
-                </span>
-              )}
-              <Button onClick={handleSave} disabled={isSaving} className="gap-2">
-                {isSaving ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Save className="w-4 h-4" />
-                )}
-                Kaydet
-              </Button>
-            </div>
-          </div>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-foreground">Kurallar Düzenleyici</h2>
+          <p className="text-muted-foreground">
+            {totalCategories} kategori, {totalSubCategories} alt kategori, {totalRules} kural
+          </p>
         </div>
-      </header>
-
-      {/* Content with Tabs */}
-      <main className="max-w-6xl mx-auto px-6 py-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-6">
-            <TabsTrigger value="editor" className="gap-2">
-              <Pencil className="w-4 h-4" />
-              Düzenle
-            </TabsTrigger>
-            <TabsTrigger value="preview" className="gap-2">
-              <Eye className="w-4 h-4" />
-              Önizleme
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="editor">
-            {isLoading ? (
-              <div className="flex items-center justify-center py-20">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
-              </div>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            onClick={() => setImportConfirm(true)}
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Varsayılanları Yükle
+          </Button>
+          <Button
+            onClick={handleSave}
+            disabled={isSaving}
+          >
+            {isSaving ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
             ) : (
-              <div className="space-y-4">
-                {/* Action Buttons */}
-                <div className="flex justify-between items-center">
-                  {categories.length === 0 && (
-                    <Button onClick={() => setImportConfirm(true)} variant="outline" className="gap-2">
-                      <Download className="w-4 h-4" />
-                      Varsayılan Kuralları İçe Aktar
-                    </Button>
-                  )}
-                  <div className="ml-auto">
-                    <Button onClick={addCategory} className="gap-2">
-                      <Plus className="w-4 h-4" />
-                      Ana Kategori Ekle
-                    </Button>
-                  </div>
-                </div>
+              <Save className="w-4 h-4 mr-2" />
+            )}
+            Kaydet
+          </Button>
+        </div>
+      </div>
 
-                {categories.length === 0 ? (
-                  <div className="text-center py-20 bg-card rounded-lg border border-border">
-                    <BookOpen className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground mb-4">Henüz kural kategorisi eklenmemiş</p>
-                    <div className="flex gap-3 justify-center">
-                      <Button onClick={() => setImportConfirm(true)} variant="outline" className="gap-2">
-                        <Download className="w-4 h-4" />
-                        Varsayılan Kuralları İçe Aktar
-                      </Button>
-                      <Button onClick={addCategory} className="gap-2">
-                        <Plus className="w-4 h-4" />
-                        Sıfırdan Başla
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {categories.map((category) => (
-                      <div key={category.id} className="bg-card rounded-lg border border-border overflow-hidden">
-                        <Collapsible
-                          open={expandedCategories.has(category.id)}
-                          onOpenChange={() => toggleCategory(category.id)}
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="editor">
+            <Pencil className="w-4 h-4 mr-2" />
+            Düzenleyici
+          </TabsTrigger>
+          <TabsTrigger value="preview">
+            <Eye className="w-4 h-4 mr-2" />
+            Önizleme
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Editor Tab */}
+        <TabsContent value="editor" className="space-y-4">
+          <div className="flex justify-end">
+            <Button onClick={addCategory}>
+              <Plus className="w-4 h-4 mr-2" />
+              Kategori Ekle
+            </Button>
+          </div>
+
+          <ScrollArea className="h-[calc(100vh-300px)]">
+            <div className="space-y-4 pr-4">
+              {categories.map((category) => (
+                <div key={category.id} className="border border-border rounded-lg bg-card">
+                  <Collapsible
+                    open={expandedCategories.has(category.id)}
+                    onOpenChange={() => toggleCategory(category.id)}
+                  >
+                    <CollapsibleTrigger asChild>
+                      <div className="flex items-center gap-3 p-4 cursor-pointer hover:bg-muted/50">
+                        <GripVertical className="w-5 h-5 text-muted-foreground" />
+                        {expandedCategories.has(category.id) ? (
+                          <ChevronDown className="w-5 h-5" />
+                        ) : (
+                          <ChevronRight className="w-5 h-5" />
+                        )}
+                        <FolderOpen className="w-5 h-5 text-primary" />
+                        
+                        {editingItem?.type === 'category' && editingItem.id === category.id ? (
+                          <Input
+                            value={category.title}
+                            onChange={(e) => updateCategory(category.id, { title: e.target.value })}
+                            onBlur={() => setEditingItem(null)}
+                            onKeyDown={(e) => e.key === 'Enter' && setEditingItem(null)}
+                            autoFocus
+                            className="max-w-xs"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        ) : (
+                          <span className="font-semibold text-lg flex-1">{category.title}</span>
+                        )}
+
+                        <Badge variant="secondary">
+                          {category.subCategories.length} alt kategori
+                        </Badge>
+
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingItem({ type: 'category', id: category.id });
+                            }}
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleteConfirm({ type: 'category', id: category.id });
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CollapsibleTrigger>
+
+                    <CollapsibleContent>
+                      <div className="px-4 pb-4 space-y-3">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => addSubCategory(category.id)}
+                          className="ml-10"
                         >
-                          <CollapsibleTrigger asChild>
-                            <div className="flex items-center gap-3 p-4 cursor-pointer hover:bg-muted/50 transition-colors">
-                              <GripVertical className="w-4 h-4 text-muted-foreground" />
-                              {expandedCategories.has(category.id) ? (
-                                <ChevronDown className="w-5 h-5 text-primary" />
-                              ) : (
-                                <ChevronRight className="w-5 h-5 text-muted-foreground" />
-                              )}
-                              <BookOpen className="w-5 h-5 text-primary" />
-                              
-                              {editingItem?.type === 'category' && editingItem.id === category.id ? (
-                                <Input
-                                  value={category.title}
-                                  onChange={(e) => updateCategory(category.id, { title: e.target.value })}
-                                  onBlur={() => setEditingItem(null)}
-                                  onKeyDown={(e) => e.key === 'Enter' && setEditingItem(null)}
-                                  className="max-w-md"
-                                  autoFocus
-                                  onClick={(e) => e.stopPropagation()}
-                                />
-                              ) : (
-                                <span className="font-semibold text-foreground flex-1">
-                                  {category.id}. {category.title}
-                                </span>
-                              )}
+                          <Plus className="w-4 h-4 mr-2" />
+                          Alt Kategori Ekle
+                        </Button>
 
-                              <Badge variant="outline" className="ml-auto">
-                                {category.subCategories.length} alt kategori
-                              </Badge>
+                        {category.subCategories.map((subCategory) => (
+                          <div key={subCategory.id} className="ml-10 border border-border rounded-lg bg-muted/30">
+                            <Collapsible
+                              open={expandedSubCategories.has(subCategory.id)}
+                              onOpenChange={() => toggleSubCategory(subCategory.id)}
+                            >
+                              <CollapsibleTrigger asChild>
+                                <div className="flex items-center gap-3 p-3 cursor-pointer hover:bg-muted/50">
+                                  <GripVertical className="w-4 h-4 text-muted-foreground" />
+                                  {expandedSubCategories.has(subCategory.id) ? (
+                                    <ChevronDown className="w-4 h-4" />
+                                  ) : (
+                                    <ChevronRight className="w-4 h-4" />
+                                  )}
+                                  <BookOpen className="w-4 h-4 text-primary" />
 
-                              <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => setEditingItem({ type: 'category', id: category.id })}
-                                >
-                                  <Pencil className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="text-destructive hover:text-destructive"
-                                  onClick={() => setDeleteConfirm({ type: 'category', id: category.id })}
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          </CollapsibleTrigger>
+                                  {editingItem?.type === 'subcategory' && editingItem.id === subCategory.id ? (
+                                    <Input
+                                      value={subCategory.title}
+                                      onChange={(e) => updateSubCategory(category.id, subCategory.id, { title: e.target.value })}
+                                      onBlur={() => setEditingItem(null)}
+                                      onKeyDown={(e) => e.key === 'Enter' && setEditingItem(null)}
+                                      autoFocus
+                                      className="max-w-xs"
+                                      onClick={(e) => e.stopPropagation()}
+                                    />
+                                  ) : (
+                                    <span className="font-medium flex-1">{subCategory.title}</span>
+                                  )}
 
-                          <CollapsibleContent>
-                            <div className="border-t border-border bg-muted/20">
-                              <div className="p-4 space-y-3">
-                                {category.subCategories.map((subCategory) => (
-                                  <div key={subCategory.id} className="bg-card rounded-lg border border-border">
-                                    <Collapsible
-                                      open={expandedSubCategories.has(subCategory.id)}
-                                      onOpenChange={() => toggleSubCategory(subCategory.id)}
+                                  <Badge variant="outline">
+                                    {subCategory.rules.length} kural
+                                  </Badge>
+
+                                  <div className="flex items-center gap-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setEditingItem({ type: 'subcategory', id: subCategory.id });
+                                      }}
                                     >
-                                      <CollapsibleTrigger asChild>
-                                        <div className="flex items-center gap-3 p-3 cursor-pointer hover:bg-muted/50 transition-colors">
-                                          <div className="w-4" />
-                                          {expandedSubCategories.has(subCategory.id) ? (
-                                            <ChevronDown className="w-4 h-4 text-primary" />
-                                          ) : (
-                                            <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                                          )}
-                                          <FolderOpen className="w-4 h-4 text-amber-500" />
+                                      <Pencil className="w-3 h-3" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setDeleteConfirm({ type: 'subcategory', id: subCategory.id, parentId: category.id });
+                                      }}
+                                    >
+                                      <Trash2 className="w-3 h-3 text-destructive" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </CollapsibleTrigger>
 
-                                          {editingItem?.type === 'subcategory' && editingItem.id === subCategory.id ? (
-                                            <div className="flex-1 space-y-2" onClick={(e) => e.stopPropagation()}>
+                              <CollapsibleContent>
+                                <div className="px-3 pb-3 space-y-2">
+                                  <Textarea
+                                    value={subCategory.description}
+                                    onChange={(e) => updateSubCategory(category.id, subCategory.id, { description: e.target.value })}
+                                    placeholder="Alt kategori açıklaması..."
+                                    className="ml-10 text-sm"
+                                    rows={2}
+                                  />
+
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => addRule(category.id, subCategory.id)}
+                                    className="ml-10"
+                                  >
+                                    <Plus className="w-4 h-4 mr-2" />
+                                    Kural Ekle
+                                  </Button>
+
+                                  {subCategory.rules.map((rule) => (
+                                    <div key={rule.id} className="ml-10 p-3 border border-border rounded-lg bg-background">
+                                      <div className="flex items-start gap-3">
+                                        <GripVertical className="w-4 h-4 text-muted-foreground mt-1" />
+                                        <FileText className="w-4 h-4 text-primary mt-1" />
+                                        <div className="flex-1 space-y-2">
+                                          {editingItem?.type === 'rule' && editingItem.id === rule.id ? (
+                                            <>
                                               <Input
-                                                value={subCategory.title}
-                                                onChange={(e) => updateSubCategory(category.id, subCategory.id, { title: e.target.value })}
-                                                placeholder="Alt kategori başlığı"
+                                                value={rule.title}
+                                                onChange={(e) => updateRule(category.id, subCategory.id, rule.id, { title: e.target.value })}
+                                                placeholder="Kural başlığı"
                                                 autoFocus
                                               />
-                                              <Input
-                                                value={subCategory.description || ''}
-                                                onChange={(e) => updateSubCategory(category.id, subCategory.id, { description: e.target.value })}
-                                                placeholder="Açıklama"
+                                              <Textarea
+                                                value={rule.description}
+                                                onChange={(e) => updateRule(category.id, subCategory.id, rule.id, { description: e.target.value })}
+                                                placeholder="Kural açıklaması"
+                                                rows={2}
                                               />
-                                              <Button size="sm" onClick={() => setEditingItem(null)}>Tamam</Button>
-                                            </div>
+                                              <Button
+                                                size="sm"
+                                                onClick={() => setEditingItem(null)}
+                                              >
+                                                Tamam
+                                              </Button>
+                                            </>
                                           ) : (
-                                            <span className="font-medium text-foreground flex-1">
-                                              {subCategory.id}. {subCategory.title}
-                                            </span>
-                                          )}
-
-                                          <Badge variant="outline" className="text-xs">
-                                            {subCategory.rules.length} kural
-                                          </Badge>
-
-                                          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                                            <Button
-                                              size="sm"
-                                              variant="ghost"
-                                              onClick={() => setEditingItem({ type: 'subcategory', id: subCategory.id })}
-                                            >
-                                              <Pencil className="w-3 h-3" />
-                                            </Button>
-                                            <Button
-                                              size="sm"
-                                              variant="ghost"
-                                              className="text-destructive hover:text-destructive"
-                                              onClick={() => setDeleteConfirm({
-                                                type: 'subcategory',
-                                                id: subCategory.id,
-                                                parentId: category.id,
-                                              })}
-                                            >
-                                              <Trash2 className="w-3 h-3" />
-                                            </Button>
-                                          </div>
-                                        </div>
-                                      </CollapsibleTrigger>
-
-                                      <CollapsibleContent>
-                                        <div className="border-t border-border p-3 space-y-2 bg-muted/10">
-                                          {subCategory.rules.map((rule) => (
-                                            <div key={rule.id} className="bg-card rounded border border-border p-3">
-                                              {editingItem?.type === 'rule' && editingItem.id === rule.id ? (
-                                                <div className="space-y-2">
-                                                  <Input
-                                                    value={rule.title}
-                                                    onChange={(e) => updateRule(category.id, subCategory.id, rule.id, { title: e.target.value })}
-                                                    placeholder="Kural başlığı"
-                                                    autoFocus
-                                                  />
-                                                  <Textarea
-                                                    value={rule.description}
-                                                    onChange={(e) => updateRule(category.id, subCategory.id, rule.id, { description: e.target.value })}
-                                                    placeholder="Kural açıklaması"
-                                                    rows={3}
-                                                  />
-                                                  <Button size="sm" onClick={() => setEditingItem(null)}>Tamam</Button>
+                                            <>
+                                              <div className="flex items-center justify-between">
+                                                <span className="font-medium">{rule.title}</span>
+                                                <div className="flex items-center gap-1">
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-7 w-7"
+                                                    onClick={() => setEditingItem({ type: 'rule', id: rule.id })}
+                                                  >
+                                                    <Pencil className="w-3 h-3" />
+                                                  </Button>
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-7 w-7"
+                                                    onClick={() => setDeleteConfirm({ type: 'rule', id: rule.id, parentId: category.id, subParentId: subCategory.id })}
+                                                  >
+                                                    <Trash2 className="w-3 h-3 text-destructive" />
+                                                  </Button>
                                                 </div>
-                                              ) : (
-                                                <div className="flex items-start gap-3">
-                                                  <FileText className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
-                                                  <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                      <span className="font-medium text-foreground">
-                                                        {rule.id}. {rule.title}
-                                                      </span>
-                                                      {rule.lastUpdate && (
-                                                        <Badge variant="outline" className="text-xs">
-                                                          {rule.lastUpdate}
-                                                        </Badge>
-                                                      )}
-                                                    </div>
-                                                    <p className="text-sm text-muted-foreground">
-                                                      {rule.description}
-                                                    </p>
-                                                  </div>
-                                                  <div className="flex items-center gap-1 shrink-0">
-                                                    <Button
-                                                      size="sm"
-                                                      variant="ghost"
-                                                      onClick={() => setEditingItem({ type: 'rule', id: rule.id })}
-                                                    >
-                                                      <Pencil className="w-3 h-3" />
-                                                    </Button>
-                                                    <Button
-                                                      size="sm"
-                                                      variant="ghost"
-                                                      className="text-destructive hover:text-destructive"
-                                                      onClick={() => setDeleteConfirm({
-                                                        type: 'rule',
-                                                        id: rule.id,
-                                                        parentId: category.id,
-                                                        subParentId: subCategory.id,
-                                                      })}
-                                                    >
-                                                      <Trash2 className="w-3 h-3" />
-                                                    </Button>
-                                                  </div>
-                                                </div>
+                                              </div>
+                                              <p className="text-sm text-muted-foreground">{rule.description}</p>
+                                              {rule.lastUpdate && (
+                                                <p className="text-xs text-muted-foreground">
+                                                  Son güncelleme: {formatDate(rule.lastUpdate)}
+                                                </p>
                                               )}
-                                            </div>
-                                          ))}
-
-                                          <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => addRule(category.id, subCategory.id)}
-                                            className="w-full gap-2"
-                                          >
-                                            <Plus className="w-3 h-3" />
-                                            Kural Ekle
-                                          </Button>
-                                        </div>
-                                      </CollapsibleContent>
-                                    </Collapsible>
-                                  </div>
-                                ))}
-
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => addSubCategory(category.id)}
-                                  className="w-full gap-2"
-                                >
-                                  <Plus className="w-4 h-4" />
-                                  Alt Kategori Ekle
-                                </Button>
-                              </div>
-                            </div>
-                          </CollapsibleContent>
-                        </Collapsible>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="preview">
-            <div className="bg-card rounded-lg border border-border p-6">
-              <h2 className="text-2xl font-bold text-foreground mb-6">Kurallar Önizlemesi</h2>
-              
-              {categories.length === 0 ? (
-                <p className="text-muted-foreground text-center py-12">Önizlenecek kural bulunmuyor</p>
-              ) : (
-                <ScrollArea className="h-[600px] pr-4">
-                  <div className="space-y-4">
-                    {categories.map((category) => (
-                      <div key={category.id} className="border border-border rounded-lg overflow-hidden">
-                        <button
-                          onClick={() => togglePreviewCategory(category.id)}
-                          className="w-full flex items-center gap-3 p-4 bg-primary/5 hover:bg-primary/10 transition-colors text-left"
-                        >
-                          {previewExpandedCats.includes(category.id) ? (
-                            <ChevronDown className="w-5 h-5 text-primary" />
-                          ) : (
-                            <ChevronRight className="w-5 h-5 text-primary" />
-                          )}
-                          <span className="font-bold text-lg text-foreground">
-                            {category.id}. {category.title}
-                          </span>
-                          <Badge className="ml-auto bg-primary/20 text-primary">
-                            {category.subCategories.reduce((acc, sub) => acc + sub.rules.length, 0)} kural
-                          </Badge>
-                        </button>
-
-                        {previewExpandedCats.includes(category.id) && (
-                          <div className="p-4 space-y-3">
-                            {category.subCategories.map((subCategory) => (
-                              <div key={subCategory.id} className="border border-border/50 rounded-lg">
-                                <button
-                                  onClick={() => togglePreviewSubCategory(subCategory.id)}
-                                  className="w-full flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors text-left"
-                                >
-                                  {previewExpandedSubs.includes(subCategory.id) ? (
-                                    <ChevronDown className="w-4 h-4 text-amber-500" />
-                                  ) : (
-                                    <ChevronRight className="w-4 h-4 text-amber-500" />
-                                  )}
-                                  <span className="font-semibold text-foreground">
-                                    {subCategory.id}. {subCategory.title}
-                                  </span>
-                                </button>
-
-                                {previewExpandedSubs.includes(subCategory.id) && (
-                                  <div className="px-4 pb-4 space-y-2">
-                                    {subCategory.description && (
-                                      <p className="text-sm text-muted-foreground italic mb-3">
-                                        {subCategory.description}
-                                      </p>
-                                    )}
-                                    {subCategory.rules.map((rule) => (
-                                      <div
-                                        key={rule.id}
-                                        className="p-3 bg-muted/30 rounded-lg border-l-2 border-primary/50"
-                                      >
-                                        <div className="flex items-center justify-between mb-1">
-                                          <span className="font-medium text-foreground">
-                                            {rule.id}. {rule.title}
-                                          </span>
-                                          {rule.lastUpdate && (
-                                            <span className="text-xs text-muted-foreground">
-                                              Güncelleme: {rule.lastUpdate}
-                                            </span>
+                                            </>
                                           )}
                                         </div>
-                                        <p className="text-sm text-muted-foreground">
-                                          {rule.description}
-                                        </p>
                                       </div>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                            ))}
+                                    </div>
+                                  ))}
+                                </div>
+                              </CollapsibleContent>
+                            </Collapsible>
                           </div>
-                        )}
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                </ScrollArea>
+                    </CollapsibleContent>
+                  </Collapsible>
+                </div>
+              ))}
+
+              {categories.length === 0 && (
+                <div className="text-center py-12 bg-card rounded-lg border border-border">
+                  <BookOpen className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground mb-4">Henüz kural bulunmuyor</p>
+                  <Button onClick={addCategory}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    İlk Kategoriyi Oluştur
+                  </Button>
+                </div>
               )}
             </div>
-          </TabsContent>
-        </Tabs>
-      </main>
+          </ScrollArea>
+        </TabsContent>
+
+        {/* Preview Tab */}
+        <TabsContent value="preview">
+          <div className="bg-card border border-border rounded-lg p-6">
+            <h3 className="text-xl font-bold mb-6 text-foreground">Kurallar Önizleme</h3>
+            <div className="space-y-4">
+              {categories.map((category) => (
+                <div key={category.id} className="border border-border rounded-lg overflow-hidden">
+                  <button
+                    onClick={() => togglePreviewCat(category.id)}
+                    className="w-full flex items-center justify-between p-4 bg-muted/50 hover:bg-muted transition-colors"
+                  >
+                    <span className="font-semibold text-lg">{category.id}. {category.title}</span>
+                    {previewExpandedCats.includes(category.id) ? (
+                      <ChevronDown className="w-5 h-5" />
+                    ) : (
+                      <ChevronRight className="w-5 h-5" />
+                    )}
+                  </button>
+
+                  {previewExpandedCats.includes(category.id) && (
+                    <div className="p-4 space-y-3">
+                      {category.subCategories.map((subCategory) => (
+                        <div key={subCategory.id} className="border border-border rounded-lg overflow-hidden">
+                          <button
+                            onClick={() => togglePreviewSub(subCategory.id)}
+                            className="w-full flex items-center justify-between p-3 bg-background hover:bg-muted/30 transition-colors"
+                          >
+                            <span className="font-medium">{subCategory.id} {subCategory.title}</span>
+                            {previewExpandedSubs.includes(subCategory.id) ? (
+                              <ChevronDown className="w-4 h-4" />
+                            ) : (
+                              <ChevronRight className="w-4 h-4" />
+                            )}
+                          </button>
+
+                          {previewExpandedSubs.includes(subCategory.id) && (
+                            <div className="p-3 space-y-2">
+                              <p className="text-sm text-muted-foreground mb-3">{subCategory.description}</p>
+                              {subCategory.rules.map((rule) => (
+                                <div key={rule.id} className="p-3 bg-muted/30 rounded-lg">
+                                  <div className="flex items-start justify-between">
+                                    <div className="flex-1">
+                                      <span className="font-medium text-primary">{rule.id}</span>
+                                      <span className="font-medium ml-2">{rule.title}</span>
+                                    </div>
+                                    {rule.lastUpdate && (
+                                      <Badge variant="outline" className="text-xs shrink-0">
+                                        {formatDate(rule.lastUpdate)}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <p className="text-sm text-muted-foreground mt-1">{rule.description}</p>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
-        <AlertDialogContent className="bg-card border-border">
+        <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-foreground">
-              {deleteConfirm?.type === 'category' && 'Kategoriyi Sil'}
-              {deleteConfirm?.type === 'subcategory' && 'Alt Kategoriyi Sil'}
-              {deleteConfirm?.type === 'rule' && 'Kuralı Sil'}
-            </AlertDialogTitle>
+            <AlertDialogTitle>Silmek istediğinize emin misiniz?</AlertDialogTitle>
             <AlertDialogDescription>
-              {deleteConfirm?.type === 'category' && 'Bu kategori ve içindeki tüm alt kategoriler ve kurallar silinecek.'}
-              {deleteConfirm?.type === 'subcategory' && 'Bu alt kategori ve içindeki tüm kurallar silinecek.'}
-              {deleteConfirm?.type === 'rule' && 'Bu kural kalıcı olarak silinecek.'}
-              {' '}Bu işlem geri alınamaz.
+              {deleteConfirm?.type === 'category' && 'Bu kategori ve içindeki tüm alt kategoriler ve kurallar silinecektir.'}
+              {deleteConfirm?.type === 'subcategory' && 'Bu alt kategori ve içindeki tüm kurallar silinecektir.'}
+              {deleteConfirm?.type === 'rule' && 'Bu kural kalıcı olarak silinecektir.'}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="border-border">İptal</AlertDialogCancel>
+            <AlertDialogCancel>İptal</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => {
-                if (!deleteConfirm) return;
-                if (deleteConfirm.type === 'category') {
+                if (deleteConfirm?.type === 'category') {
                   deleteCategory(deleteConfirm.id);
-                } else if (deleteConfirm.type === 'subcategory' && deleteConfirm.parentId) {
+                } else if (deleteConfirm?.type === 'subcategory' && deleteConfirm.parentId) {
                   deleteSubCategory(deleteConfirm.parentId, deleteConfirm.id);
-                } else if (deleteConfirm.type === 'rule' && deleteConfirm.parentId && deleteConfirm.subParentId) {
+                } else if (deleteConfirm?.type === 'rule' && deleteConfirm.parentId && deleteConfirm.subParentId) {
                   deleteRule(deleteConfirm.parentId, deleteConfirm.subParentId, deleteConfirm.id);
                 }
               }}
@@ -1013,22 +887,30 @@ const RulesEditor = () => {
 
       {/* Import Confirmation Dialog */}
       <AlertDialog open={importConfirm} onOpenChange={setImportConfirm}>
-        <AlertDialogContent className="bg-card border-border">
+        <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-foreground">Varsayılan Kuralları İçe Aktar</AlertDialogTitle>
+            <AlertDialogTitle>Varsayılan kuralları yükle</AlertDialogTitle>
             <AlertDialogDescription>
-              Mevcut tüm kurallar silinip varsayılan kurallar ile değiştirilecek. Devam etmek istiyor musunuz?
+              Mevcut kurallar silinecek ve varsayılan kurallar yüklenecektir. Bu işlem geri alınamaz.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="border-border">İptal</AlertDialogCancel>
+            <AlertDialogCancel>İptal</AlertDialogCancel>
             <AlertDialogAction onClick={handleImportDefaults}>
-              İçe Aktar
+              Yükle
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  );
+};
+
+const RulesEditor = () => {
+  return (
+    <AdminLayout activeTab="kurallar">
+      <RulesEditorContent />
+    </AdminLayout>
   );
 };
 
