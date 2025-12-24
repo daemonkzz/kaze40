@@ -193,6 +193,25 @@ const ManageAccessContent: React.FC = () => {
   const handleAddUser = async (userId: string) => {
     setAddingUserId(userId);
     try {
+      // 1. Önce user_roles tablosuna admin rolü ekle
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: userId,
+          role: 'admin',
+        });
+
+      if (roleError) {
+        // Eğer zaten varsa (unique constraint) devam et
+        if (!roleError.message.includes('duplicate')) {
+          console.error('Add role error:', roleError);
+          toast.error('Admin rolü eklenirken hata oluştu');
+          setAddingUserId(null);
+          return;
+        }
+      }
+
+      // 2. Sonra admin_2fa_settings tablosuna kayıt ekle
       const { error } = await supabase
         .from('admin_2fa_settings')
         .insert({
@@ -225,6 +244,7 @@ const ManageAccessContent: React.FC = () => {
     if (!removingUserId) return;
 
     try {
+      // 1. admin_2fa_settings'den sil
       const { error } = await supabase
         .from('admin_2fa_settings')
         .delete()
@@ -234,6 +254,18 @@ const ManageAccessContent: React.FC = () => {
         console.error('Remove user error:', error);
         toast.error('Kullanıcı silinirken hata oluştu');
         return;
+      }
+
+      // 2. user_roles'dan admin rolünü sil
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', removingUserId)
+        .eq('role', 'admin');
+
+      if (roleError) {
+        console.error('Remove role error:', roleError);
+        // Ama kullanıcı 2fa_settings'den silindiği için hata gösterme
       }
 
       toast.success('Kullanıcı yetki listesinden kaldırıldı');
