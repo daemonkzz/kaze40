@@ -521,28 +521,28 @@ const Gallery = () => {
                   />
                 </div>
 
-                {/* Image */}
-                <div className="aspect-square bg-muted">
+                {/* Image Container with Overlay */}
+                <div className="relative aspect-square bg-muted">
                   <img
                     src={image.url}
                     alt={image.file_name}
                     className="w-full h-full object-cover"
                     loading="lazy"
                   />
-                </div>
-
-                {/* Info Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="absolute bottom-0 left-0 right-0 p-3">
-                    <div className="flex items-center justify-between text-xs text-white/70 mb-2">
-                      <span>{formatBytes(image.original_size)}</span>
-                      <span className="text-green-400">→ {formatBytes(image.optimized_size)}</span>
+                  
+                  {/* Info Overlay - inside image container so it doesn't cover the button */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                    <div className="absolute bottom-0 left-0 right-0 p-3">
+                      <div className="flex items-center justify-between text-xs text-white/70 mb-2">
+                        <span>{formatBytes(image.original_size)}</span>
+                        <span className="text-green-400">→ {formatBytes(image.optimized_size)}</span>
+                      </div>
+                      {image.width && image.height && (
+                        <p className="text-xs text-white/50 mb-2">
+                          {image.width} × {image.height}
+                        </p>
+                      )}
                     </div>
-                    {image.width && image.height && (
-                      <p className="text-xs text-white/50 mb-2">
-                        {image.width} × {image.height}
-                      </p>
-                    )}
                   </div>
                 </div>
 
