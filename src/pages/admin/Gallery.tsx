@@ -1,12 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
 import imageCompression from 'browser-image-compression';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
-  ArrowLeft,
   Loader2,
   Upload,
   Trash2,
@@ -30,6 +28,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 
 interface GalleryImage {
   id: string;
@@ -52,11 +51,8 @@ interface UploadingFile {
   optimizedSize?: number;
 }
 
-const Gallery = () => {
-  const navigate = useNavigate();
-  const { user, isLoading: authLoading } = useAuth();
-  const [isAuthorized, setIsAuthorized] = useState(false);
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+const GalleryContent = () => {
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   
   const [images, setImages] = useState<GalleryImage[]>([]);
@@ -65,45 +61,10 @@ const Gallery = () => {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  // Check admin role
-  useEffect(() => {
-    const checkAdminRole = async () => {
-      if (authLoading) return;
-      
-      if (!user) {
-        toast.error('Bu sayfaya erişmek için giriş yapmalısınız');
-        navigate('/');
-        return;
-      }
-
-      try {
-        const { data: hasAdminRole, error } = await supabase
-          .rpc('has_role', { _user_id: user.id, _role: 'admin' });
-
-        if (error || !hasAdminRole) {
-          toast.error('Bu sayfaya erişim yetkiniz yok');
-          navigate('/');
-          return;
-        }
-
-        setIsAuthorized(true);
-      } catch (error) {
-        console.error('Auth check error:', error);
-        navigate('/');
-      } finally {
-        setIsCheckingAuth(false);
-      }
-    };
-
-    checkAdminRole();
-  }, [user, authLoading, navigate]);
-
   // Load images
   useEffect(() => {
-    if (isAuthorized) {
-      loadImages();
-    }
-  }, [isAuthorized]);
+    loadImages();
+  }, []);
 
   const loadImages = async () => {
     setIsLoading(true);
@@ -343,237 +304,200 @@ const Gallery = () => {
     }
   };
 
-  if (authLoading || isCheckingAuth) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!isAuthorized) return null;
-
   return (
-    <div className="min-h-screen bg-background">
+    <div className="p-8">
       {/* Header */}
-      <header className="bg-card border-b border-border sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate('/admin')}
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-              <div>
-                <h1 className="text-xl font-bold text-foreground">Medya Galeri</h1>
-                <p className="text-sm text-muted-foreground">
-                  {images.length} görsel
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              {images.length > 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={selectAll}
-                >
-                  {selectedImages.size === images.length ? 'Seçimi Kaldır' : 'Tümünü Seç'}
-                </Button>
-              )}
-              
-              {selectedImages.size > 0 && (
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => setDeleteConfirm(true)}
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  {selectedImages.size} Seçili Sil
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Drop Zone */}
-        <div
-          {...getRootProps()}
-          className={`
-            border-2 border-dashed rounded-xl p-12 text-center cursor-pointer
-            transition-all duration-300 mb-8
-            ${isDragActive 
-              ? 'border-primary bg-primary/10 scale-[1.02]' 
-              : 'border-border hover:border-primary/50 hover:bg-card/50'
-            }
-          `}
-        >
-          <input {...getInputProps()} />
-          <div className="flex flex-col items-center gap-4">
-            <div className={`
-              w-16 h-16 rounded-full flex items-center justify-center
-              ${isDragActive ? 'bg-primary/20' : 'bg-muted'}
-            `}>
-              <Upload className={`w-8 h-8 ${isDragActive ? 'text-primary' : 'text-muted-foreground'}`} />
-            </div>
-            <div>
-              <p className="text-lg font-medium text-foreground">
-                {isDragActive ? 'Bırakın!' : 'Görselleri sürükleyip bırakın'}
-              </p>
-              <p className="text-sm text-muted-foreground mt-1">
-                veya dosya seçmek için tıklayın (JPG, PNG, WebP)
-              </p>
-            </div>
-            <Badge variant="secondary" className="mt-2">
-              Otomatik WebP dönüşümü • Maks 1920px • %80 kalite
-            </Badge>
-          </div>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-foreground">Medya Galeri</h2>
+          <p className="text-muted-foreground">{images.length} görsel</p>
         </div>
 
-        {/* Upload Progress */}
-        {uploadingFiles.length > 0 && (
-          <div className="mb-8 space-y-3">
-            <h3 className="text-sm font-medium text-foreground mb-3">Yükleniyor...</h3>
-            {uploadingFiles.map(file => (
-              <div
-                key={file.id}
-                className="bg-card border border-border rounded-lg p-4"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-3">
-                    <FileImage className="w-5 h-5 text-muted-foreground" />
-                    <span className="text-sm font-medium truncate max-w-[200px]">
-                      {file.name}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {formatBytes(file.originalSize)}
-                      {file.optimizedSize && (
-                        <span className="text-green-500 ml-1">
-                          → {formatBytes(file.optimizedSize)}
-                        </span>
-                      )}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {file.status === 'compressing' && (
-                      <Badge variant="outline" className="text-xs">Sıkıştırılıyor...</Badge>
-                    )}
-                    {file.status === 'uploading' && (
-                      <Badge variant="outline" className="text-xs">Yükleniyor...</Badge>
-                    )}
-                    {file.status === 'done' && (
-                      <Badge className="bg-green-500/20 text-green-500 text-xs">
-                        <Check className="w-3 h-3 mr-1" /> Tamamlandı
-                      </Badge>
-                    )}
-                    {file.status === 'error' && (
-                      <Badge variant="destructive" className="text-xs">
-                        <X className="w-3 h-3 mr-1" /> Hata
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-                <Progress value={file.progress} className="h-2" />
-              </div>
-            ))}
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          {images.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={selectAll}
+            >
+              {selectedImages.size === images.length ? 'Seçimi Kaldır' : 'Tümünü Seç'}
+            </Button>
+          )}
+          
+          {selectedImages.size > 0 && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setDeleteConfirm(true)}
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              {selectedImages.size} Seçili Sil
+            </Button>
+          )}
+        </div>
+      </div>
 
-        {/* Gallery Grid */}
-        {isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      {/* Drop Zone */}
+      <div
+        {...getRootProps()}
+        className={`
+          border-2 border-dashed rounded-xl p-12 text-center cursor-pointer
+          transition-all duration-300 mb-8
+          ${isDragActive 
+            ? 'border-primary bg-primary/10 scale-[1.02]' 
+            : 'border-border hover:border-primary/50 hover:bg-card/50'
+          }
+        `}
+      >
+        <input {...getInputProps()} />
+        <div className="flex flex-col items-center gap-4">
+          <div className={`
+            w-16 h-16 rounded-full flex items-center justify-center
+            ${isDragActive ? 'bg-primary/20' : 'bg-muted'}
+          `}>
+            <Upload className={`w-8 h-8 ${isDragActive ? 'text-primary' : 'text-muted-foreground'}`} />
           </div>
-        ) : images.length === 0 ? (
-          <div className="text-center py-20">
-            <ImageIcon className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
-            <p className="text-lg font-medium text-foreground">Henüz görsel yok</p>
+          <div>
+            <p className="text-lg font-medium text-foreground">
+              {isDragActive ? 'Bırakın!' : 'Görselleri sürükleyip bırakın'}
+            </p>
             <p className="text-sm text-muted-foreground mt-1">
-              Yukarıdaki alana görsel sürükleyerek başlayın
+              veya dosya seçmek için tıklayın (JPG, PNG, WebP)
             </p>
           </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {images.map(image => (
-              <div
-                key={image.id}
-                className={`
-                  group relative bg-card border rounded-lg overflow-hidden
-                  transition-all duration-200
-                  ${selectedImages.has(image.id) 
-                    ? 'border-primary ring-2 ring-primary/20' 
-                    : 'border-border hover:border-primary/50'
-                  }
-                `}
-              >
-                {/* Checkbox */}
-                <div className="absolute top-2 left-2 z-10">
-                  <Checkbox
-                    checked={selectedImages.has(image.id)}
-                    onCheckedChange={() => toggleImageSelection(image.id)}
-                    className="bg-background/80 backdrop-blur-sm"
-                  />
-                </div>
-
-                {/* Image Container with Overlay */}
-                <div className="relative aspect-square bg-muted">
-                  <img
-                    src={image.url}
-                    alt={image.file_name}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
-                  
-                  {/* Info Overlay - inside image container so it doesn't cover the button */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                    <div className="absolute bottom-0 left-0 right-0 p-3">
-                      <div className="flex items-center justify-between text-xs text-white/70 mb-2">
-                        <span>{formatBytes(image.original_size)}</span>
-                        <span className="text-green-400">→ {formatBytes(image.optimized_size)}</span>
-                      </div>
-                      {image.width && image.height && (
-                        <p className="text-xs text-white/50 mb-2">
-                          {image.width} × {image.height}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Copy Button */}
-                <div className="p-2 border-t border-border bg-card/50">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full text-xs h-8"
-                    onClick={() => copyToClipboard(image.url, image.id)}
-                  >
-                    {copiedId === image.id ? (
-                      <>
-                        <Check className="w-3 h-3 mr-1 text-green-500" />
-                        Kopyalandı
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3 h-3 mr-1" />
-                        Bağlantıyı Kopyala
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+          <Badge variant="secondary" className="mt-2">
+            Otomatik WebP dönüşümü • Maks 1920px • %80 kalite
+          </Badge>
+        </div>
       </div>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Upload Progress */}
+      {uploadingFiles.length > 0 && (
+        <div className="mb-8 space-y-3">
+          <h3 className="text-sm font-medium text-foreground mb-3">Yükleniyor...</h3>
+          {uploadingFiles.map(file => (
+            <div
+              key={file.id}
+              className="bg-card border border-border rounded-lg p-4"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-3">
+                  <FileImage className="w-5 h-5 text-muted-foreground" />
+                  <span className="text-sm font-medium truncate max-w-[200px]">
+                    {file.name}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {formatBytes(file.originalSize)}
+                    {file.optimizedSize && (
+                      <span className="text-green-500 ml-1">
+                        → {formatBytes(file.optimizedSize)}
+                      </span>
+                    )}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {file.status === 'compressing' && (
+                    <Badge variant="outline" className="text-xs">Sıkıştırılıyor...</Badge>
+                  )}
+                  {file.status === 'uploading' && (
+                    <Badge variant="outline" className="text-xs">Yükleniyor...</Badge>
+                  )}
+                  {file.status === 'done' && (
+                    <Badge className="bg-green-500/20 text-green-500 text-xs">
+                      <Check className="w-3 h-3 mr-1" /> Tamamlandı
+                    </Badge>
+                  )}
+                  {file.status === 'error' && (
+                    <Badge variant="destructive" className="text-xs">
+                      <X className="w-3 h-3 mr-1" /> Hata
+                    </Badge>
+                  )}
+                </div>
+              </div>
+              <Progress value={file.progress} className="h-2" />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Gallery Grid */}
+      {isLoading ? (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      ) : images.length === 0 ? (
+        <div className="text-center py-20">
+          <ImageIcon className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+          <p className="text-lg font-medium text-foreground">Henüz görsel yok</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Yukarıdaki alana görsel sürükleyerek başlayın
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          {images.map((image) => (
+            <div
+              key={image.id}
+              className={`
+                relative group rounded-lg overflow-hidden border-2 transition-all
+                ${selectedImages.has(image.id) 
+                  ? 'border-primary ring-2 ring-primary/20' 
+                  : 'border-border hover:border-primary/50'
+                }
+              `}
+            >
+              {/* Selection Checkbox */}
+              <div className="absolute top-2 left-2 z-10">
+                <Checkbox
+                  checked={selectedImages.has(image.id)}
+                  onCheckedChange={() => toggleImageSelection(image.id)}
+                  className="bg-background/80 backdrop-blur"
+                />
+              </div>
+
+              {/* Image */}
+              <div className="aspect-square bg-muted">
+                <img
+                  src={image.url}
+                  alt={image.file_name}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              </div>
+
+              {/* Overlay on hover */}
+              <div className="absolute inset-0 bg-background/80 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-3">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="w-full"
+                  onClick={() => copyToClipboard(image.url, image.id)}
+                >
+                  {copiedId === image.id ? (
+                    <>
+                      <Check className="w-4 h-4 mr-2" />
+                      Kopyalandı
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4 mr-2" />
+                      URL Kopyala
+                    </>
+                  )}
+                </Button>
+                <div className="text-xs text-muted-foreground text-center">
+                  {image.width && image.height && (
+                    <p>{image.width}×{image.height}</p>
+                  )}
+                  <p>{formatBytes(image.optimized_size)}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Delete Confirmation */}
       <AlertDialog open={deleteConfirm} onOpenChange={setDeleteConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -585,8 +509,8 @@ const Gallery = () => {
           <AlertDialogFooter>
             <AlertDialogCancel>İptal</AlertDialogCancel>
             <AlertDialogAction
-              onClick={deleteSelected}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={deleteSelected}
             >
               Sil
             </AlertDialogAction>
@@ -594,6 +518,14 @@ const Gallery = () => {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  );
+};
+
+const Gallery = () => {
+  return (
+    <AdminLayout activeTab="galeri">
+      <GalleryContent />
+    </AdminLayout>
   );
 };
 

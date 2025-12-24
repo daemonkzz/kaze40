@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Search, 
@@ -11,7 +10,6 @@ import {
   Trash2, 
   Unlock,
   Loader2,
-  ArrowLeft,
   Copy,
   Check
 } from 'lucide-react';
@@ -49,6 +47,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { generateTOTP } from '@epic-web/totp';
 import QRCode from 'qrcode';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 import type { Admin2FASettings, AdminUser } from '@/types/admin2fa';
 
 interface ProfileData {
@@ -68,8 +67,7 @@ interface AdminListItem {
   profile: ProfileData | null;
 }
 
-const ManageAccess: React.FC = () => {
-  const navigate = useNavigate();
+const ManageAccessContent: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [searchResult, setSearchResult] = useState<ProfileData | null>(null);
@@ -123,9 +121,9 @@ const ManageAccess: React.FC = () => {
       const list: AdminListItem[] = settings.map(setting => ({
         id: setting.id,
         user_id: setting.user_id,
-        is_provisioned: setting.is_provisioned,
-        is_blocked: setting.is_blocked,
-        failed_attempts: setting.failed_attempts,
+        is_provisioned: setting.is_provisioned ?? false,
+        is_blocked: setting.is_blocked ?? false,
+        failed_attempts: setting.failed_attempts ?? 0,
         profile: profiles?.find(p => p.id === setting.user_id) || null,
       }));
 
@@ -356,211 +354,255 @@ const ManageAccess: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-6 py-8 max-w-4xl">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/admin')}>
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              <Shield className="w-6 h-6 text-primary" />
-              Yetki Yönetimi
-            </h1>
-            <p className="text-sm text-muted-foreground">Admin erişimi yönetimi ve 2FA kurulumu</p>
-          </div>
-        </div>
-
-        {/* Search Section */}
-        <Card className="mb-8">
-          <CardContent className="p-6">
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <Search className="w-5 h-5" />
-              Kullanıcı Ara
-            </h2>
-            <div className="flex gap-2">
-              <Input
-                placeholder="Kullanıcı adı, Discord ID veya Steam ID..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                className="flex-1"
-              />
-              <Button onClick={handleSearch} disabled={isSearching}>
-                {isSearching ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  'Ara'
-                )}
-              </Button>
-            </div>
-
-            {/* Search Error */}
-            {searchError && (
-              <p className="text-sm text-destructive mt-3">{searchError}</p>
-            )}
-
-            {/* Search Result */}
-            {searchResult && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-4 p-4 border border-border rounded-lg bg-card flex items-center justify-between"
-              >
-                <div className="flex items-center gap-3">
-                  <Avatar>
-                    <AvatarImage src={searchResult.avatar_url || undefined} />
-                    <AvatarFallback>{searchResult.username?.[0]?.toUpperCase() || '?'}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-medium">{searchResult.username || 'İsimsiz'}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {searchResult.discord_id && `Discord: ${searchResult.discord_id}`}
-                      {searchResult.steam_id && ` | Steam: ${searchResult.steam_id}`}
-                    </p>
-                  </div>
-                </div>
-                <Button
-                  onClick={() => handleAddUser(searchResult.id)}
-                  disabled={addingUserId === searchResult.id}
-                  size="sm"
-                >
-                  {addingUserId === searchResult.id ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <>
-                      <UserPlus className="w-4 h-4 mr-2" />
-                      Yetki Listesine Ekle
-                    </>
-                  )}
-                </Button>
-              </motion.div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Admin List */}
-        <Card>
-          <CardContent className="p-6">
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5" />
-              Yetkili Listesi
-            </h2>
-
-            {isLoadingList ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-6 h-6 animate-spin text-primary" />
-              </div>
-            ) : adminList.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                Henüz yetkili kullanıcı bulunmamaktadır.
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Kullanıcı</TableHead>
-                    <TableHead>Durum</TableHead>
-                    <TableHead className="text-right">İşlemler</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {adminList.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="w-8 h-8">
-                            <AvatarImage src={item.profile?.avatar_url || undefined} />
-                            <AvatarFallback>{item.profile?.username?.[0]?.toUpperCase() || '?'}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">{item.profile?.username || 'İsimsiz'}</p>
-                            {item.profile?.discord_id && (
-                              <p className="text-xs text-muted-foreground">Discord: {item.profile.discord_id}</p>
-                            )}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{getStatusBadge(item)}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          {/* Provision Button */}
-                          {!item.is_provisioned && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleProvision(item.user_id, item.profile?.username || null)}
-                              disabled={provisioningUserId === item.user_id}
-                            >
-                              {provisioningUserId === item.user_id ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                              ) : (
-                                <>
-                                  <QrCode className="w-4 h-4 mr-1" />
-                                  QR Aktifleştir
-                                </>
-                              )}
-                            </Button>
-                          )}
-
-                          {/* Unblock Button */}
-                          {item.is_blocked && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setUnblockingUserId(item.user_id)}
-                            >
-                              <Unlock className="w-4 h-4 mr-1" />
-                              Blokajı Kaldır
-                            </Button>
-                          )}
-
-                          {/* Remove Button */}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setRemovingUserId(item.user_id)}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+    <div className="p-8 max-w-4xl mx-auto">
+      {/* Header */}
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+          <Shield className="w-6 h-6 text-primary" />
+          Yetki Yönetimi
+        </h2>
+        <p className="text-muted-foreground">Admin erişimi yönetimi ve 2FA kurulumu</p>
       </div>
 
-      {/* Remove Confirmation Dialog */}
+      {/* Search Section */}
+      <Card className="mb-8">
+        <CardContent className="p-6">
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Search className="w-5 h-5" />
+            Kullanıcı Ara
+          </h3>
+          <div className="flex gap-2">
+            <Input
+              placeholder="Kullanıcı adı, Discord ID veya Steam ID..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              className="flex-1"
+            />
+            <Button onClick={handleSearch} disabled={isSearching}>
+              {isSearching ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                'Ara'
+              )}
+            </Button>
+          </div>
+
+          {/* Search Error */}
+          {searchError && (
+            <p className="text-sm text-destructive mt-3">{searchError}</p>
+          )}
+
+          {/* Search Result */}
+          {searchResult && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-4 p-4 border border-border rounded-lg bg-card flex items-center justify-between"
+            >
+              <div className="flex items-center gap-3">
+                <Avatar>
+                  <AvatarImage src={searchResult.avatar_url || undefined} />
+                  <AvatarFallback>{searchResult.username?.[0]?.toUpperCase() || '?'}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-medium">{searchResult.username || 'İsimsiz'}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {searchResult.discord_id && `Discord: ${searchResult.discord_id}`}
+                    {searchResult.steam_id && ` | Steam: ${searchResult.steam_id}`}
+                  </p>
+                </div>
+              </div>
+              <Button
+                onClick={() => handleAddUser(searchResult.id)}
+                disabled={addingUserId === searchResult.id}
+                size="sm"
+              >
+                {addingUserId === searchResult.id ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Yetki Listesine Ekle
+                  </>
+                )}
+              </Button>
+            </motion.div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Admin List */}
+      <Card>
+        <CardContent className="p-6">
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <ShieldCheck className="w-5 h-5" />
+            Yetkili Listesi
+          </h3>
+
+          {isLoadingList ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            </div>
+          ) : adminList.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Henüz yetkili kullanıcı bulunmamaktadır.
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Kullanıcı</TableHead>
+                  <TableHead>Durum</TableHead>
+                  <TableHead className="text-right">İşlemler</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {adminList.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Avatar className="w-8 h-8">
+                          <AvatarImage src={item.profile?.avatar_url || undefined} />
+                          <AvatarFallback>{item.profile?.username?.[0]?.toUpperCase() || '?'}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium">{item.profile?.username || 'İsimsiz'}</p>
+                          {item.profile?.discord_id && (
+                            <p className="text-xs text-muted-foreground">Discord: {item.profile.discord_id}</p>
+                          )}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>{getStatusBadge(item)}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        {/* Provision Button */}
+                        {!item.is_provisioned && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleProvision(item.user_id, item.profile?.username || null)}
+                            disabled={provisioningUserId === item.user_id}
+                          >
+                            {provisioningUserId === item.user_id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <>
+                                <QrCode className="w-4 h-4 mr-1" />
+                                QR Oluştur
+                              </>
+                            )}
+                          </Button>
+                        )}
+
+                        {/* Unblock Button */}
+                        {item.is_blocked && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setUnblockingUserId(item.user_id)}
+                          >
+                            <Unlock className="w-4 h-4 mr-1" />
+                            Blokajı Kaldır
+                          </Button>
+                        )}
+
+                        {/* Delete Button */}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setRemovingUserId(item.user_id)}
+                        >
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* QR Code Modal */}
+      <Dialog open={qrModalOpen} onOpenChange={setQrModalOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <QrCode className="w-5 h-5" />
+              2FA QR Kodu
+            </DialogTitle>
+            <DialogDescription>
+              Bu QR kodu authenticator uygulamasıyla tarayın
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-col items-center gap-4 py-4">
+            {qrCodeUrl && (
+              <div className="p-4 bg-muted rounded-lg">
+                <img src={qrCodeUrl} alt="QR Code" className="w-48 h-48" />
+              </div>
+            )}
+
+            {totpSecret && (
+              <div className="w-full">
+                <p className="text-sm text-muted-foreground mb-2 text-center">
+                  veya manuel olarak girin:
+                </p>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 bg-muted px-3 py-2 rounded text-sm font-mono text-center break-all">
+                    {totpSecret}
+                  </code>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={copySecret}
+                  >
+                    {secretCopied ? (
+                      <Check className="w-4 h-4 text-green-500" />
+                    ) : (
+                      <Copy className="w-4 h-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Remove User Confirmation */}
       <AlertDialog open={!!removingUserId} onOpenChange={() => setRemovingUserId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Yetkiyi Kaldır</AlertDialogTitle>
+            <AlertDialogTitle>Kullanıcıyı Kaldır</AlertDialogTitle>
             <AlertDialogDescription>
-              Bu kullanıcının admin yetkisini kaldırmak istediğinize emin misiniz? Bu işlem geri alınamaz.
+              Bu kullanıcıyı yetki listesinden kaldırmak istediğinize emin misiniz? 
+              Admin paneline erişimi kaybolacaktır.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>İptal</AlertDialogCancel>
-            <AlertDialogAction onClick={handleRemoveUser} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Yetkiyi Kaldır
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleRemoveUser}
+            >
+              Kaldır
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Unblock Confirmation Dialog */}
+      {/* Unblock User Confirmation */}
       <AlertDialog open={!!unblockingUserId} onOpenChange={() => setUnblockingUserId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Blokajı Kaldır</AlertDialogTitle>
             <AlertDialogDescription>
-              Bu kullanıcının blokajını kaldırmak istediğinize emin misiniz? Kullanıcı tekrar giriş yapabilecektir.
+              Bu kullanıcının blokajını kaldırmak istediğinize emin misiniz? 
+              Başarısız deneme sayısı sıfırlanacaktır.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -571,52 +613,15 @@ const ManageAccess: React.FC = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* QR Code Modal */}
-      <Dialog open={qrModalOpen} onOpenChange={setQrModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <QrCode className="w-5 h-5" />
-              2FA Kurulum QR Kodu
-            </DialogTitle>
-            <DialogDescription>
-              Bu QR kodu kullanıcıya gönderin. Google Authenticator veya benzeri bir uygulama ile taratılmalıdır.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="flex flex-col items-center gap-4 py-4">
-            {qrCodeUrl && (
-              <div className="p-4 bg-white rounded-lg">
-                <img src={qrCodeUrl} alt="2FA QR Code" className="w-48 h-48" />
-              </div>
-            )}
-            
-            {totpSecret && (
-              <div className="w-full">
-                <p className="text-xs text-muted-foreground mb-2">Manuel giriş için secret:</p>
-                <div className="flex items-center gap-2">
-                  <code className="flex-1 p-2 bg-muted rounded text-xs font-mono break-all">
-                    {totpSecret}
-                  </code>
-                  <Button variant="outline" size="sm" onClick={copySecret}>
-                    {secretCopied ? (
-                      <Check className="w-4 h-4 text-emerald-500" />
-                    ) : (
-                      <Copy className="w-4 h-4" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <Button onClick={() => setQrModalOpen(false)} className="w-full">
-            Kapat
-          </Button>
-        </DialogContent>
-      </Dialog>
     </div>
+  );
+};
+
+const ManageAccess = () => {
+  return (
+    <AdminLayout activeTab="yetkilendirme">
+      <ManageAccessContent />
+    </AdminLayout>
   );
 };
 

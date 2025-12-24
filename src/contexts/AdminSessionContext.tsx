@@ -161,11 +161,15 @@ export const AdminSessionProvider: React.FC<{ children: React.ReactNode }> = ({ 
   });
 
   // Update remaining time periodically and refresh session expiry
+  // Using a ref to avoid getRemainingTime in dependency array causing restarts
   useEffect(() => {
     if (!isAdminAuthenticated || !user) {
       setRemainingTime(null);
       return;
     }
+
+    // Initial update
+    setRemainingTime(Math.ceil(getRemainingTime() / 1000));
 
     const interval = setInterval(() => {
       const remaining = Math.ceil(getRemainingTime() / 1000);
@@ -178,7 +182,8 @@ export const AdminSessionProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isAdminAuthenticated, getRemainingTime, user]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdminAuthenticated, user]);
 
   // Verify 2FA code
   const verify2FA = useCallback(async (code: string): Promise<{ success: boolean; error?: string }> => {
