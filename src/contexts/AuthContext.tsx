@@ -37,8 +37,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Clean URL hash immediately on mount if present
-    cleanUrlHash();
+    // NOT: OAuth dönüşlerinde bazı akışlarda token URL hash içinde gelir.
+    // Supabase bunu okuyup oturumu kurmadan önce hash'i temizlemek oturumun hiç oluşmamasına yol açabilir.
+    // Bu yüzden URL temizliğini yalnızca session oluştuğunda (aşağıda) yapıyoruz.
 
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
