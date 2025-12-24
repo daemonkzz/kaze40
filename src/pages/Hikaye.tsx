@@ -65,6 +65,7 @@ const Hikaye = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const mapContainerRef = useRef<HTMLDivElement>(null);
+  const fullscreenContainerRef = useRef<HTMLDivElement>(null);
 
   // Whiteboard viewer hook
   const {
@@ -144,14 +145,16 @@ const Hikaye = () => {
     setScale(prev => Math.max(0.3, prev - 0.3));
   }, []);
 
-  // Attach wheel listener
+  // Attach wheel listener to the active container
   useEffect(() => {
-    const container = mapContainerRef.current;
+    const container = isFullscreen 
+      ? fullscreenContainerRef.current 
+      : mapContainerRef.current;
     if (!container || activeTab !== "hikaye-tablosu") return;
 
     container.addEventListener('wheel', handleWheel, { passive: false });
     return () => container.removeEventListener('wheel', handleWheel);
-  }, [handleWheel, activeTab]);
+  }, [handleWheel, activeTab, isFullscreen]);
 
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
@@ -341,7 +344,7 @@ const Hikaye = () => {
 
       {/* Map content with pan/zoom */}
       <div
-        ref={mapContainerRef}
+        ref={fullscreenContainerRef}
         className="absolute inset-0 overflow-hidden cursor-grab active:cursor-grabbing"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
