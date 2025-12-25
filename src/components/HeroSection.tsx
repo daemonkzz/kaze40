@@ -158,16 +158,17 @@ const HeroSection = () => {
                     {letter}
                   </motion.span>)}
               </div>
-              <div className="overflow-visible">
-                {"BAŞLIYOR".split("").map((letter, i) => <motion.span key={`basliyor-${i}`} className="inline-block" custom={i + 6} variants={letterVariants} initial="hidden" animate="visible" whileHover={{
-                scale: 1.1,
-                color: "hsl(var(--primary))",
-                textShadow: "0 0 30px hsl(var(--primary) / 0.8)"
-              }}>
-                    {letter}
-                  </motion.span>)}
-              </div>
             </motion.h1>
+            <motion.div 
+              className="inline-flex items-center bg-black/50 backdrop-blur-sm rounded-full px-6 py-2 border border-white/10 mt-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 1.2 }}
+            >
+              <span className="text-lg text-foreground/90 tracking-wide font-sans not-italic">
+                Post-Apokaliptik Roleplay Deneyimi
+              </span>
+            </motion.div>
             <motion.div 
               initial={{ opacity: 0, y: 20 }} 
               animate={{ opacity: 1, y: 0 }} 
@@ -287,12 +288,17 @@ const HeroSection = () => {
                     {letter}
                   </motion.span>)}
               </div>
-              <div className="overflow-visible">
-                {"BAŞLIYOR".split("").map((letter, i) => <motion.span key={`basliyor-${i}`} className="inline-block" custom={i + 6} variants={letterVariants} initial="hidden" animate="visible">
-                    {letter}
-                  </motion.span>)}
-              </div>
             </motion.h1>
+            <motion.div 
+              className="inline-flex items-center bg-black/50 backdrop-blur-sm rounded-full px-4 py-1.5 border border-white/10 mt-3"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 1.2 }}
+            >
+              <span className="text-sm sm:text-base text-foreground/90 tracking-wide font-sans not-italic">
+                Post-Apokaliptik Roleplay Deneyimi
+              </span>
+            </motion.div>
           </motion.div>
           
           {/* Button and Server Status inline */}
