@@ -171,7 +171,7 @@ const HeroSection = () => {
                 {"POST-APOKALİPTİK ROLEPLAY DENEYİMİ".split("").map((letter, i) => (
                   <motion.span 
                     key={`subtitle-${i}`} 
-                    className="inline-block font-display text-4xl text-foreground tracking-tight"
+                    className="inline-block font-display text-4xl text-foreground tracking-tight italic"
                     style={{ 
                       marginRight: letter === " " ? "0.6rem" : "-0.02em",
                       textShadow: "0 0 40px hsl(var(--primary) / 0.3), 0 2px 10px rgba(0,0,0,0.5)"
@@ -320,7 +320,7 @@ const HeroSection = () => {
               {"POST-APOKALİPTİK ROLEPLAY DENEYİMİ".split("").map((letter, i) => (
                 <motion.span 
                   key={`subtitle-mobile-${i}`} 
-                  className="inline-block font-display text-xl sm:text-2xl text-foreground tracking-tight"
+                  className="inline-block font-display text-xl sm:text-2xl text-foreground tracking-tight italic"
                   style={{ 
                     marginRight: letter === " " ? "0.4rem" : "-0.02em",
                     textShadow: "0 0 30px hsl(var(--primary) / 0.3), 0 2px 8px rgba(0,0,0,0.5)"
