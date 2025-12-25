@@ -1,9 +1,27 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+// Güvenli CORS yapılandırması - sadece kendi domain'lerimize izin ver
+const getAllowedOrigin = (requestOrigin: string | null): string => {
+  const allowedOrigins = [
+    'https://bbuatycybtwblwyychag.supabase.co',
+    'https://hayalrp.lovable.app', // Production URL
+    'http://localhost:5173', // Development
+    'http://localhost:8080', // Development alternative
+  ];
+  
+  if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
+    return requestOrigin;
+  }
+  
+  // Fallback - en güvenli seçenek
+  return allowedOrigins[0];
 };
+
+const getCorsHeaders = (requestOrigin: string | null) => ({
+  'Access-Control-Allow-Origin': getAllowedOrigin(requestOrigin),
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Credentials': 'true',
+});
 
 // TOTP verification using HMAC-SHA1
 async function generateTOTPCode(secret: string, counter: number): Promise<string> {
@@ -72,6 +90,9 @@ async function verifyTOTP(secret: string, code: string, window: number = 1): Pro
 }
 
 Deno.serve(async (req) => {
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });

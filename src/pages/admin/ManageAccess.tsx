@@ -84,6 +84,28 @@ const ManageAccessContent: React.FC = () => {
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
   const [totpSecret, setTotpSecret] = useState<string | null>(null);
   const [secretCopied, setSecretCopied] = useState(false);
+  const [secretWarningShown, setSecretWarningShown] = useState(false);
+
+  // Modal kapandığında hassas verileri temizle
+  const handleQrModalClose = (open: boolean) => {
+    if (!open) {
+      // Güvenlik için tüm hassas state'leri temizle
+      setQrCodeUrl(null);
+      setTotpSecret(null);
+      setSecretCopied(false);
+      setSecretWarningShown(false);
+    }
+    setQrModalOpen(open);
+  };
+
+  // Secret'ı maskele (ilk ve son 4 karakter görünsün)
+  const getMaskedSecret = (secret: string): string => {
+    if (secret.length <= 8) return secret;
+    const first4 = secret.slice(0, 4);
+    const last4 = secret.slice(-4);
+    const masked = '*'.repeat(Math.min(secret.length - 8, 16));
+    return `${first4}${masked}${last4}`;
+  };
 
   // Fetch admin list
   const fetchAdminList = useCallback(async () => {
@@ -425,7 +447,16 @@ const ManageAccessContent: React.FC = () => {
       await navigator.clipboard.writeText(totpSecret);
       setSecretCopied(true);
       setTimeout(() => setSecretCopied(false), 2000);
-      toast.success('Secret kopyalandı');
+      
+      // Güvenlik uyarısı göster (sadece bir kez)
+      if (!secretWarningShown) {
+        toast.warning('Bu secret\'ı güvenli bir yerde saklayın. Modal kapandıktan sonra tekrar gösterilmeyecek!', {
+          duration: 5000,
+        });
+        setSecretWarningShown(true);
+      } else {
+        toast.success('Secret kopyalandı');
+      }
     }
   };
 
@@ -614,7 +645,7 @@ const ManageAccessContent: React.FC = () => {
       </Card>
 
       {/* QR Code Modal */}
-      <Dialog open={qrModalOpen} onOpenChange={setQrModalOpen}>
+      <Dialog open={qrModalOpen} onOpenChange={handleQrModalClose}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -640,12 +671,13 @@ const ManageAccessContent: React.FC = () => {
                 </p>
                 <div className="flex items-center gap-2">
                   <code className="flex-1 bg-muted px-3 py-2 rounded text-sm font-mono text-center break-all">
-                    {totpSecret}
+                    {getMaskedSecret(totpSecret)}
                   </code>
                   <Button
                     variant="outline"
                     size="icon"
                     onClick={copySecret}
+                    title="Tam secret'ı kopyala"
                   >
                     {secretCopied ? (
                       <Check className="w-4 h-4 text-green-500" />
@@ -654,6 +686,9 @@ const ManageAccessContent: React.FC = () => {
                     )}
                   </Button>
                 </div>
+                <p className="text-xs text-amber-500 mt-2 text-center">
+                  ⚠️ Bu secret sadece bir kez gösterilir. Kopyalayıp güvenli bir yerde saklayın.
+                </p>
               </div>
             )}
           </div>
