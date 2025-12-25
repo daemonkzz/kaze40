@@ -66,9 +66,9 @@ const HeroSection = () => {
     })
   };
   return <section ref={sectionRef} className="relative min-h-screen flex lg:items-end items-start overflow-hidden pb-8 pt-32 lg:pt-0">
-      {/* Floating Particles */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none z-[5]">
-        {particles.map(particle => <motion.div key={particle.id} className="absolute rounded-full bg-primary/30" style={{
+      {/* Floating Particles - GPU Accelerated */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-[5] contain-paint">
+        {particles.map(particle => <motion.div key={particle.id} className="absolute rounded-full bg-primary/30 gpu-accelerated" style={{
         width: particle.size,
         height: particle.size,
         left: `${particle.x}%`,
@@ -237,7 +237,7 @@ const HeroSection = () => {
               <div className="relative z-10">
                 {/* Header with logo */}
                 <div className="flex items-center gap-3 mb-3">
-                  <img src={logo} alt="Logo" className="w-10 h-10 object-contain" />
+                  <img src={logo} alt="Logo" loading="lazy" decoding="async" className="w-10 h-10 object-contain" />
                   <div>
                     <motion.div className="bg-primary text-primary-foreground text-[9px] font-medium px-2 py-0.5 rounded inline-block uppercase tracking-wider" animate={{
                       boxShadow: ["0 0 0px hsl(var(--primary) / 0)", "0 0 20px hsl(var(--primary) / 0.6)", "0 0 0px hsl(var(--primary) / 0)"]
@@ -358,7 +358,7 @@ const HeroSection = () => {
               transition={{ duration: 0.8, delay: 1.4 }}
             >
               <div className="relative z-10 flex items-center gap-3">
-                <img src={logo} alt="Logo" className="w-10 h-10 object-contain" />
+                <img src={logo} alt="Logo" loading="lazy" decoding="async" className="w-10 h-10 object-contain" />
                 <div className="flex flex-col">
                   <div className="flex items-center gap-2">
                     <motion.div 

@@ -35,11 +35,11 @@ const AmbientParticles = () => {
   }, []);
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden contain-paint">
       {particles.map((particle) => (
         <motion.div
           key={particle.id}
-          className="absolute rounded-full"
+          className="absolute rounded-full gpu-accelerated"
           style={{
             width: particle.size,
             height: particle.size,

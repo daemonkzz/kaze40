@@ -98,7 +98,9 @@ const WhatIsSection = () => {
                 />
                 <motion.img 
                   src={portalSilhouette} 
-                  alt="Portal silhouette" 
+                  alt="Portal silhouette"
+                  loading="lazy"
+                  decoding="async"
                   className="relative z-10 w-full h-full object-contain"
                   initial={{ scale: 1.05, opacity: 0 }}
                   animate={isVisible ? { scale: 1, opacity: 1 } : {}}
@@ -213,7 +215,9 @@ const WhatIsSection = () => {
                   {/* Silhouette image */}
                   <motion.img 
                     src={portalSilhouette} 
-                    alt="Portal silhouette" 
+                    alt="Portal silhouette"
+                    loading="lazy"
+                    decoding="async"
                     className="relative z-10 w-full h-full object-contain"
                     initial={{ scale: 1.05, opacity: 0 }}
                     animate={isVisible ? { scale: 1, opacity: 1 } : {}}

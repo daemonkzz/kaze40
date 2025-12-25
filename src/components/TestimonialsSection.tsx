@@ -205,12 +205,12 @@ const TestimonialsSection = () => {
             </AnimatePresence>
           </div>
 
-          {/* Particle Effects */}
-          <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-[400px] md:w-[550px] h-32 pointer-events-none overflow-visible">
+          {/* Particle Effects - GPU Accelerated */}
+          <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-[400px] md:w-[550px] h-32 pointer-events-none overflow-visible contain-paint">
             {particles.map((particle) => (
               <motion.div
                 key={particle.id}
-                className="absolute rounded-full bg-primary"
+                className="absolute rounded-full bg-primary gpu-accelerated"
                 style={{
                   width: particle.size,
                   height: particle.size,

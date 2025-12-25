@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,6 +8,9 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { AdminSessionProvider } from "./contexts/AdminSessionContext";
 import { AdminRouteGuard } from "./components/admin/AdminRouteGuard";
 import { AppErrorBoundary } from "@/components/AppErrorBoundary";
+import PageLoader from "./components/PageLoader";
+
+// Public pages - direct import
 import Index from "./pages/Index";
 import Kurallar from "./pages/Kurallar";
 import Guncellemeler from "./pages/Guncellemeler";
@@ -16,20 +20,32 @@ import GizlilikSozlesmesi from "./pages/GizlilikSozlesmesi";
 import Basvuru from "./pages/Basvuru";
 import BasvuruForm from "./pages/BasvuruForm";
 import BasvuruRevision from "./pages/BasvuruRevision";
-import Admin from "./pages/Admin";
-import AdminBasvuruDetay from "./pages/AdminBasvuruDetay";
-import FormBuilder from "./pages/admin/FormBuilder";
-import UpdateEditor from "./pages/admin/UpdateEditor";
-import RulesEditor from "./pages/admin/RulesEditor";
-import Gallery from "./pages/admin/Gallery";
-import ManageAccess from "./pages/admin/ManageAccess";
-import NotificationEditor from "./pages/admin/NotificationEditor";
-import WhiteboardEditor from "./pages/admin/WhiteboardEditor";
-import Locked from "./pages/admin/Locked";
 import NotFound from "./pages/NotFound";
 import AmbientParticles from "./components/AmbientParticles";
 
-const queryClient = new QueryClient();
+// Admin pages - lazy loaded for better performance
+const Admin = lazy(() => import("./pages/Admin"));
+const AdminBasvuruDetay = lazy(() => import("./pages/AdminBasvuruDetay"));
+const FormBuilder = lazy(() => import("./pages/admin/FormBuilder"));
+const UpdateEditor = lazy(() => import("./pages/admin/UpdateEditor"));
+const RulesEditor = lazy(() => import("./pages/admin/RulesEditor"));
+const Gallery = lazy(() => import("./pages/admin/Gallery"));
+const ManageAccess = lazy(() => import("./pages/admin/ManageAccess"));
+const NotificationEditor = lazy(() => import("./pages/admin/NotificationEditor"));
+const WhiteboardEditor = lazy(() => import("./pages/admin/WhiteboardEditor"));
+const Locked = lazy(() => import("./pages/admin/Locked"));
+
+// Optimized QueryClient with caching
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const RouteEffects = () => {
   const location = useLocation();
@@ -49,26 +65,28 @@ const RouteEffects = () => {
         <Route path="/basvuru/:formId" element={<BasvuruForm />} />
         <Route path="/basvuru/:formId/revision" element={<BasvuruRevision />} />
 
-        {/* Admin Routes - Protected with 2FA */}
+        {/* Admin Routes - Protected with 2FA, Lazy Loaded */}
         <Route
           path="/admin/*"
           element={
             <AdminSessionProvider>
               <AdminRouteGuard>
-                <Routes>
-                  <Route index element={<Admin />} />
-                  <Route path="basvuru/:id" element={<AdminBasvuruDetay />} />
-                  <Route path="form-builder" element={<FormBuilder />} />
-                  <Route path="form-builder/:id" element={<FormBuilder />} />
-                  <Route path="update-editor" element={<UpdateEditor />} />
-                  <Route path="update-editor/:id" element={<UpdateEditor />} />
-                  <Route path="rules-editor" element={<RulesEditor />} />
-                  <Route path="gallery" element={<Gallery />} />
-                  <Route path="manage-access" element={<ManageAccess />} />
-                  <Route path="notification-editor" element={<NotificationEditor />} />
-                  <Route path="whiteboard-editor" element={<WhiteboardEditor />} />
-                  <Route path="locked" element={<Locked />} />
-                </Routes>
+                <Suspense fallback={<PageLoader />}>
+                  <Routes>
+                    <Route index element={<Admin />} />
+                    <Route path="basvuru/:id" element={<AdminBasvuruDetay />} />
+                    <Route path="form-builder" element={<FormBuilder />} />
+                    <Route path="form-builder/:id" element={<FormBuilder />} />
+                    <Route path="update-editor" element={<UpdateEditor />} />
+                    <Route path="update-editor/:id" element={<UpdateEditor />} />
+                    <Route path="rules-editor" element={<RulesEditor />} />
+                    <Route path="gallery" element={<Gallery />} />
+                    <Route path="manage-access" element={<ManageAccess />} />
+                    <Route path="notification-editor" element={<NotificationEditor />} />
+                    <Route path="whiteboard-editor" element={<WhiteboardEditor />} />
+                    <Route path="locked" element={<Locked />} />
+                  </Routes>
+                </Suspense>
               </AdminRouteGuard>
             </AdminSessionProvider>
           }

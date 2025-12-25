@@ -73,6 +73,27 @@
 }
 
 @layer utilities {
+  /* GPU Accelerated Animations */
+  .gpu-accelerated {
+    will-change: transform, opacity;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+
+  .gpu-transform {
+    will-change: transform;
+    transform: translateZ(0);
+  }
+
+  /* Layout containment for heavy sections */
+  .contain-paint {
+    contain: paint;
+  }
+
+  .contain-layout {
+    contain: layout style;
+  }
+
   .text-glow {
     text-shadow: 0 0 20px hsl(136 82% 41% / 0.5), 0 0 40px hsl(136 82% 41% / 0.3);
   }
