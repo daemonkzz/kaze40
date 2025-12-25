@@ -128,6 +128,9 @@ const Hikaye = () => {
     setIsDragging(false);
   }, []);
 
+  // Pinch-to-zoom state
+  const lastPinchDistanceRef = useRef<number | null>(null);
+
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if (e.touches.length === 1) {
       setIsDragging(true);
@@ -135,10 +138,32 @@ const Hikaye = () => {
         x: e.touches[0].clientX - position.x, 
         y: e.touches[0].clientY - position.y 
       });
+    } else if (e.touches.length === 2) {
+      // Start pinch-to-zoom
+      const distance = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      lastPinchDistanceRef.current = distance;
+      setIsDragging(false);
     }
   }, [position]);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      // Pinch-to-zoom
+      const distance = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      if (lastPinchDistanceRef.current !== null) {
+        const delta = distance - lastPinchDistanceRef.current;
+        setScale(prev => Math.max(0.3, Math.min(5, prev + delta * 0.005)));
+      }
+      lastPinchDistanceRef.current = distance;
+      return;
+    }
+    
     if (!isDragging || e.touches.length !== 1) return;
     setPosition({
       x: e.touches[0].clientX - dragStart.x,
@@ -148,6 +173,7 @@ const Hikaye = () => {
 
   const handleTouchEnd = useCallback(() => {
     setIsDragging(false);
+    lastPinchDistanceRef.current = null;
   }, []);
 
   const resetView = useCallback(() => {
@@ -257,6 +283,18 @@ const Hikaye = () => {
     };
 
     const onTouchMove = (e: TouchEvent) => {
+      // Allow touch events inside the fullscreen container for pan/zoom
+      const target = e.target as HTMLElement;
+      const isInMapContainer = fullscreenContainerRef.current?.contains(target);
+      
+      if (isInMapContainer) {
+        // Let the container's own touch handlers manage pan/zoom
+        // Only prevent default to stop page bounce, but don't stop propagation
+        e.preventDefault();
+        return;
+      }
+      
+      // Block all other touch moves (page scroll)
       e.preventDefault();
       e.stopPropagation();
     };
@@ -720,9 +758,9 @@ const Hikaye = () => {
           </motion.div>
 
           {/* Placeholder for layout stability - Online bar moved to map overlay */}
-          <div className="h-4" style={{ overflowAnchor: 'none' }} />
+          <div className="h-1" style={{ overflowAnchor: 'none' }} />
 
-          <div className="mb-14" />
+          <div className="mb-6" />
 
           {/* Content */}
           <AnimatePresence mode="wait">
@@ -755,7 +793,7 @@ const Hikaye = () => {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.2 }}
-                        className="absolute top-2 left-1/2 -translate-x-1/2 z-20 pointer-events-none"
+                        className="absolute -top-1 left-1/2 -translate-x-1/2 z-20 pointer-events-none"
                         style={{ overflowAnchor: 'none' }}
                       >
                         <div className="pointer-events-auto bg-background/60 backdrop-blur-md border border-border/30 rounded-full px-2.5 py-1.5 shadow-lg">
