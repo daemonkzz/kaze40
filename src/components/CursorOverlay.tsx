@@ -6,32 +6,41 @@ interface CursorOverlayProps {
   cursors: CursorPosition[];
 }
 
-// Cursor SVG component
-const CursorIcon = ({ color }: { color: string }) => (
-  <svg
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    style={{ filter: `drop-shadow(0 2px 4px rgba(0,0,0,0.3))` }}
-  >
-    <path
-      d="M5.65376 3.45474L19.7449 11.7551C20.5174 12.2127 20.3767 13.3584 19.5143 13.6141L13.0749 15.5213L10.4717 21.6849C10.1265 22.5144 8.95046 22.4316 8.72185 21.5631L4.38929 4.76469C4.19053 4.00959 4.94052 3.35992 5.65376 3.45474Z"
-      fill={color}
-      stroke="#ffffff"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
+// Cursor SVG component with gradient fill and colored border
+const CursorIcon = ({ borderColor, odometer }: { borderColor: string; odometer: number }) => {
+  const gradientId = `cursor-gradient-${odometer}`;
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      style={{ filter: `drop-shadow(0 1px 3px rgba(0,0,0,0.4))` }}
+    >
+      <defs>
+        <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#064e3b" />
+          <stop offset="100%" stopColor="#0a0a0a" />
+        </linearGradient>
+      </defs>
+      <path
+        d="M5.65376 3.45474L19.7449 11.7551C20.5174 12.2127 20.3767 13.3584 19.5143 13.6141L13.0749 15.5213L10.4717 21.6849C10.1265 22.5144 8.95046 22.4316 8.72185 21.5631L4.38929 4.76469C4.19053 4.00959 4.94052 3.35992 5.65376 3.45474Z"
+        fill={`url(#${gradientId})`}
+        stroke={borderColor}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+};
 
 const CursorOverlay = memo(({ cursors }: CursorOverlayProps) => {
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden z-50">
       <AnimatePresence>
-        {cursors.map((cursor) => (
+        {cursors.map((cursor, index) => (
           <motion.div
             key={cursor.user_id}
             initial={{ opacity: 0, scale: 0.5 }}
@@ -54,24 +63,19 @@ const CursorOverlay = memo(({ cursors }: CursorOverlayProps) => {
             }}
           >
             {/* Cursor icon */}
-            <CursorIcon color={cursor.color} />
+            <CursorIcon borderColor={cursor.color} odometer={index} />
             
-            {/* Username label */}
-            <motion.div
-              initial={{ opacity: 0, y: -5 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="absolute left-5 top-4 whitespace-nowrap"
+            {/* Minimalist username label */}
+            <div 
+              className="absolute left-4 top-4 whitespace-nowrap px-1.5 py-0.5 
+                         rounded text-[10px] font-medium text-white/80 
+                         bg-black/30 backdrop-blur-[2px]"
+              style={{ 
+                borderLeft: `2px solid ${cursor.color}`,
+              }}
             >
-              <div 
-                className="px-2 py-0.5 rounded-md text-xs font-medium text-white shadow-lg"
-                style={{ 
-                  backgroundColor: cursor.color,
-                  boxShadow: `0 2px 8px ${cursor.color}40`
-                }}
-              >
-                {cursor.username || 'Anonim'}
-              </div>
-            </motion.div>
+              {(cursor.username || 'Anonim').slice(0, 10)}
+            </div>
           </motion.div>
         ))}
       </AnimatePresence>

@@ -13,13 +13,17 @@ export interface CursorPosition {
   lastUpdate: number;
 }
 
-// Generate consistent color from user_id
+// Generate a vibrant border color based on user ID
 const generateUserColor = (userId: string): string => {
   const colors = [
-    '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', 
-    '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F',
-    '#BB8FCE', '#85C1E9', '#F8B500', '#00CED1',
-    '#FF69B4', '#32CD32', '#FF8C00', '#9370DB'
+    '#ef4444', // Kırmızı
+    '#22c55e', // Yeşil
+    '#3b82f6', // Mavi
+    '#f97316', // Turuncu
+    '#a855f7', // Mor
+    '#06b6d4', // Cyan
+    '#ec4899', // Pembe
+    '#eab308', // Sarı
   ];
   
   let hash = 0;
