@@ -53,7 +53,7 @@ const BasvuruForm = () => {
   const [isCodeVerified, setIsCodeVerified] = useState(false);
   const [codeError, setCodeError] = useState('');
 
-  // Load form template
+  // Load form template from secure view (accessCodes hidden)
   useEffect(() => {
     const loadFormTemplate = async () => {
       if (!formId) {
@@ -62,11 +62,11 @@ const BasvuruForm = () => {
       }
 
       try {
+        // Use the secure public view that hides accessCodes
         const { data, error } = await supabase
-          .from('form_templates')
+          .from('form_templates_public')
           .select('*')
           .eq('id', formId)
-          .eq('is_active', true)
           .maybeSingle();
 
         if (error) {
@@ -99,24 +99,42 @@ const BasvuruForm = () => {
     loadFormTemplate();
   }, [formId, toast]);
 
-  const handleCodeSubmit = () => {
-    if (!formTemplate?.settings?.accessCodes) return;
+  // Verify code via secure database function (codes never sent to client)
+  const handleCodeSubmit = async () => {
+    if (!formId) return;
     
     const trimmedCode = accessCode.trim();
-    if (formTemplate.settings.accessCodes.includes(trimmedCode)) {
-      setIsCodeVerified(true);
-      setCodeError('');
-      toast({
-        title: "Erişim Sağlandı",
-        description: "Kod doğrulandı, forma erişebilirsiniz.",
+    
+    try {
+      const { data, error } = await supabase.rpc('verify_form_access_code', {
+        p_form_id: formId,
+        p_code: trimmedCode
       });
-    } else {
-      setCodeError('Geçersiz erişim kodu');
-      toast({
-        title: "Hatalı Kod",
-        description: "Girdiğiniz erişim kodu geçersiz.",
-        variant: "destructive",
-      });
+
+      if (error) {
+        console.error('Code verification error:', error);
+        setCodeError('Doğrulama sırasında bir hata oluştu');
+        return;
+      }
+
+      if (data === true) {
+        setIsCodeVerified(true);
+        setCodeError('');
+        toast({
+          title: "Erişim Sağlandı",
+          description: "Kod doğrulandı, forma erişebilirsiniz.",
+        });
+      } else {
+        setCodeError('Geçersiz erişim kodu');
+        toast({
+          title: "Hatalı Kod",
+          description: "Girdiğiniz erişim kodu geçersiz.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Code submit error:', error);
+      setCodeError('Bir hata oluştu');
     }
   };
 
