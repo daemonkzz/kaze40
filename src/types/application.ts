@@ -4,6 +4,27 @@ import type { FormQuestion, FormSettings, FormType } from './formBuilder';
 export type ApplicationStatus = 'pending' | 'approved' | 'rejected' | 'revision_requested';
 export type ApplicationCardStatus = 'open' | 'closed' | 'approved' | 'pending' | 'rejected' | 'locked' | 'revision_requested';
 
+// AI decision type
+export type AIDecision = 'approved' | 'rejected' | 'interview';
+
+// AI evaluation structure
+export interface AIEvaluation {
+  player_profile?: {
+    experience_level?: string;
+    roleplay_style?: string;
+    character_depth?: number;
+  };
+  mentality_analysis?: {
+    maturity_score?: number;
+    conflict_handling?: string;
+    team_player?: boolean;
+  };
+  strengths?: string[];
+  weaknesses?: string[];
+  recommendation_notes?: string;
+  [key: string]: unknown;
+}
+
 // Base application interface
 export interface Application {
   id: number;
@@ -16,6 +37,11 @@ export interface Application {
   revision_requested_fields?: string[] | null;
   revision_notes?: Record<string, string> | null;
   content_history?: Array<{ timestamp: string; content: Record<string, string> }>;
+  // AI evaluation fields
+  ai_evaluation?: AIEvaluation | null;
+  ai_decision?: AIDecision | null;
+  ai_confidence_score?: number | null;
+  ai_evaluated_at?: string | null;
 }
 
 // Extended application with profile info

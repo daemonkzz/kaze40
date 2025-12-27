@@ -139,6 +139,10 @@ export type Database = {
       applications: {
         Row: {
           admin_note: string | null
+          ai_confidence_score: number | null
+          ai_decision: string | null
+          ai_evaluated_at: string | null
+          ai_evaluation: Json | null
           content: Json
           content_history: Json | null
           created_at: string
@@ -151,6 +155,10 @@ export type Database = {
         }
         Insert: {
           admin_note?: string | null
+          ai_confidence_score?: number | null
+          ai_decision?: string | null
+          ai_evaluated_at?: string | null
+          ai_evaluation?: Json | null
           content: Json
           content_history?: Json | null
           created_at?: string
@@ -163,6 +171,10 @@ export type Database = {
         }
         Update: {
           admin_note?: string | null
+          ai_confidence_score?: number | null
+          ai_decision?: string | null
+          ai_evaluated_at?: string | null
+          ai_evaluation?: Json | null
           content?: Json
           content_history?: Json | null
           created_at?: string
