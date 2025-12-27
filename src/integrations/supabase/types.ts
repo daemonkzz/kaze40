@@ -679,6 +679,42 @@ export type Database = {
           },
         ]
       }
+      form_templates_public: {
+        Row: {
+          cover_image_url: string | null
+          created_at: string | null
+          description: string | null
+          id: string | null
+          is_active: boolean | null
+          questions: Json | null
+          settings: Json | null
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          cover_image_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          questions?: Json | null
+          settings?: never
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          cover_image_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          questions?: Json | null
+          settings?: never
+          title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
@@ -691,6 +727,10 @@ export type Database = {
       record_totp_result: {
         Args: { p_success: boolean; p_user_id: string }
         Returns: Json
+      }
+      verify_form_access_code: {
+        Args: { p_code: string; p_form_id: string }
+        Returns: boolean
       }
       verify_totp_code: {
         Args: { p_code: string; p_user_id: string }
