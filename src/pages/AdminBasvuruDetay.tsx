@@ -13,13 +13,20 @@ import {
   FileText,
   MessageSquare,
   Edit,
-  History
+  History,
+  Bot,
+  Brain,
+  Target,
+  TrendingUp,
+  AlertCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
+import type { AIEvaluation, AIDecision } from '@/types/application';
 
 interface ApplicationDetail {
   id: number;
@@ -37,6 +44,11 @@ interface ApplicationDetail {
     discord_id: string | null;
     steam_id: string | null;
   };
+  // AI evaluation fields
+  ai_evaluation: AIEvaluation | null;
+  ai_decision: AIDecision | null;
+  ai_confidence_score: number | null;
+  ai_evaluated_at: string | null;
 }
 
 const formTypeNames: Record<string, string> = {
@@ -187,7 +199,12 @@ const AdminBasvuruDetay = () => {
           revision_requested_fields: data.revision_requested_fields as string[] | null,
           revision_notes: data.revision_notes as Record<string, string> | null,
           content_history: (data.content_history || []) as Array<{ timestamp: string; content: Record<string, string> }>,
-          profile: profile || undefined
+          profile: profile || undefined,
+          // AI evaluation fields
+          ai_evaluation: data.ai_evaluation as AIEvaluation | null,
+          ai_decision: data.ai_decision as AIDecision | null,
+          ai_confidence_score: data.ai_confidence_score,
+          ai_evaluated_at: data.ai_evaluated_at
         });
         setAdminNote(data.admin_note || '');
       } catch (error) {
@@ -404,7 +421,186 @@ const AdminBasvuruDetay = () => {
           </div>
         )}
 
-        {/* Revision Mode Toggle */}
+        {/* AI Evaluation Card */}
+        {application.ai_evaluated_at && (
+          <div className="bg-card border border-border rounded-lg p-6 mb-6">
+            <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Bot className="w-5 h-5 text-primary" />
+              AI Değerlendirmesi
+              <Badge variant="outline" className="ml-auto text-xs">
+                {formatDate(application.ai_evaluated_at)}
+              </Badge>
+            </h2>
+            
+            {/* AI Decision and Confidence */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              {/* AI Decision */}
+              <div className="bg-background/50 rounded-lg p-4 border border-border/50">
+                <div className="flex items-center gap-2 mb-2">
+                  <Target className="w-4 h-4 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">AI Kararı</p>
+                </div>
+                {application.ai_decision && (
+                  <Badge className={`text-sm ${
+                    application.ai_decision === 'approved' 
+                      ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                      : application.ai_decision === 'rejected'
+                      ? 'bg-red-500/20 text-red-400 border-red-500/30'
+                      : 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+                  }`}>
+                    {application.ai_decision === 'approved' && 'Onay Önerisi'}
+                    {application.ai_decision === 'rejected' && 'Red Önerisi'}
+                    {application.ai_decision === 'interview' && 'Mülakat Önerisi'}
+                  </Badge>
+                )}
+              </div>
+              
+              {/* Confidence Score */}
+              <div className="bg-background/50 rounded-lg p-4 border border-border/50">
+                <div className="flex items-center gap-2 mb-2">
+                  <TrendingUp className="w-4 h-4 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">Güven Skoru</p>
+                </div>
+                {application.ai_confidence_score !== null && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className={`text-2xl font-bold ${
+                        application.ai_confidence_score >= 80 ? 'text-emerald-400' :
+                        application.ai_confidence_score >= 60 ? 'text-amber-400' :
+                        'text-red-400'
+                      }`}>
+                        {application.ai_confidence_score}%
+                      </span>
+                    </div>
+                    <Progress 
+                      value={application.ai_confidence_score} 
+                      className={`h-2 ${
+                        application.ai_confidence_score >= 80 ? '[&>div]:bg-emerald-500' :
+                        application.ai_confidence_score >= 60 ? '[&>div]:bg-amber-500' :
+                        '[&>div]:bg-red-500'
+                      }`}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* AI Evaluation Details */}
+            {application.ai_evaluation && (
+              <div className="space-y-4">
+                {/* Player Profile */}
+                {application.ai_evaluation.player_profile && (
+                  <div className="bg-background/50 rounded-lg p-4 border border-border/50">
+                    <div className="flex items-center gap-2 mb-3">
+                      <User className="w-4 h-4 text-primary" />
+                      <p className="text-sm font-medium text-foreground">Oyuncu Profili</p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                      {application.ai_evaluation.player_profile.experience_level && (
+                        <div>
+                          <p className="text-muted-foreground">Deneyim Seviyesi</p>
+                          <p className="text-foreground capitalize">{application.ai_evaluation.player_profile.experience_level}</p>
+                        </div>
+                      )}
+                      {application.ai_evaluation.player_profile.roleplay_style && (
+                        <div>
+                          <p className="text-muted-foreground">RP Tarzı</p>
+                          <p className="text-foreground capitalize">{application.ai_evaluation.player_profile.roleplay_style}</p>
+                        </div>
+                      )}
+                      {application.ai_evaluation.player_profile.character_depth !== undefined && (
+                        <div>
+                          <p className="text-muted-foreground">Karakter Derinliği</p>
+                          <p className="text-foreground">{application.ai_evaluation.player_profile.character_depth}/10</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Mentality Analysis */}
+                {application.ai_evaluation.mentality_analysis && (
+                  <div className="bg-background/50 rounded-lg p-4 border border-border/50">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Brain className="w-4 h-4 text-primary" />
+                      <p className="text-sm font-medium text-foreground">Mentalite Analizi</p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                      {application.ai_evaluation.mentality_analysis.maturity_score !== undefined && (
+                        <div>
+                          <p className="text-muted-foreground">Olgunluk Skoru</p>
+                          <p className="text-foreground">{application.ai_evaluation.mentality_analysis.maturity_score}/100</p>
+                        </div>
+                      )}
+                      {application.ai_evaluation.mentality_analysis.conflict_handling && (
+                        <div>
+                          <p className="text-muted-foreground">Çatışma Yönetimi</p>
+                          <p className="text-foreground capitalize">{application.ai_evaluation.mentality_analysis.conflict_handling}</p>
+                        </div>
+                      )}
+                      {application.ai_evaluation.mentality_analysis.team_player !== undefined && (
+                        <div>
+                          <p className="text-muted-foreground">Takım Oyuncusu</p>
+                          <p className="text-foreground">{application.ai_evaluation.mentality_analysis.team_player ? 'Evet' : 'Hayır'}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Strengths & Weaknesses */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {application.ai_evaluation.strengths && application.ai_evaluation.strengths.length > 0 && (
+                    <div className="bg-emerald-500/5 rounded-lg p-4 border border-emerald-500/20">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Check className="w-4 h-4 text-emerald-500" />
+                        <p className="text-sm font-medium text-emerald-400">Güçlü Yönler</p>
+                      </div>
+                      <ul className="space-y-1 text-sm text-foreground">
+                        {application.ai_evaluation.strengths.map((strength, idx) => (
+                          <li key={idx} className="flex items-start gap-2">
+                            <span className="text-emerald-500 mt-1">•</span>
+                            {strength}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {application.ai_evaluation.weaknesses && application.ai_evaluation.weaknesses.length > 0 && (
+                    <div className="bg-red-500/5 rounded-lg p-4 border border-red-500/20">
+                      <div className="flex items-center gap-2 mb-3">
+                        <AlertCircle className="w-4 h-4 text-red-500" />
+                        <p className="text-sm font-medium text-red-400">Zayıf Yönler</p>
+                      </div>
+                      <ul className="space-y-1 text-sm text-foreground">
+                        {application.ai_evaluation.weaknesses.map((weakness, idx) => (
+                          <li key={idx} className="flex items-start gap-2">
+                            <span className="text-red-500 mt-1">•</span>
+                            {weakness}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+
+                {/* Recommendation Notes */}
+                {application.ai_evaluation.recommendation_notes && (
+                  <div className="bg-background/50 rounded-lg p-4 border border-border/50">
+                    <div className="flex items-center gap-2 mb-2">
+                      <MessageSquare className="w-4 h-4 text-primary" />
+                      <p className="text-sm font-medium text-foreground">AI Yorumu</p>
+                    </div>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                      {application.ai_evaluation.recommendation_notes}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         {canTakeAction && (
           <div className="bg-card border border-border rounded-lg p-4 mb-6">
             <div className="flex items-center justify-between">
