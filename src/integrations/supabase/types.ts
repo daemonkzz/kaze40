@@ -341,6 +341,45 @@ export type Database = {
           },
         ]
       }
+      glossary_terms: {
+        Row: {
+          category: string
+          created_at: string
+          definition: string
+          examples: Json | null
+          full_name: string | null
+          id: string
+          is_critical: boolean | null
+          order_index: number | null
+          term: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          definition: string
+          examples?: Json | null
+          full_name?: string | null
+          id?: string
+          is_critical?: boolean | null
+          order_index?: number | null
+          term: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          definition?: string
+          examples?: Json | null
+          full_name?: string | null
+          id?: string
+          is_critical?: boolean | null
+          order_index?: number | null
+          term?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notification_recipients: {
         Row: {
           created_at: string | null

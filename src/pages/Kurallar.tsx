@@ -17,6 +17,7 @@ import { ReadingProgress } from "@/components/rules/ReadingProgress";
 import { MobileBackButton } from "@/components/rules/MobileBackButton";
 import { SearchHistoryDropdown } from "@/components/rules/SearchHistoryDropdown";
 import { KeyboardShortcutsHint } from "@/components/rules/KeyboardShortcutsHint";
+import { GlossarySection } from "@/components/rules/GlossarySection";
 
 // Hooks
 import {
@@ -28,6 +29,7 @@ import {
   isRuleCritical,
   flattenRules,
 } from "@/hooks/useRulesFeatures";
+import { useContentProtection } from "@/hooks/useContentProtection";
 
 const rulesData: MainCategory[] = kazeRulesData;
 
@@ -48,6 +50,7 @@ const Kurallar = () => {
   const { history, addToHistory, clearHistory, removeFromHistory } = useSearchHistory();
   const { shareRule } = useShareRule();
   const readingProgress = useReadingProgress();
+  const { protectionStyles } = useContentProtection();
 
   // Fetch rules from database
   useEffect(() => {
@@ -193,7 +196,7 @@ const Kurallar = () => {
     category.subCategories.reduce((acc, sub) => acc + sub.rules.length, 0);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" style={protectionStyles}>
       {/* Reading Progress Bar */}
       <ReadingProgress progress={readingProgress} />
       
@@ -576,6 +579,9 @@ const Kurallar = () => {
                   </motion.div>
                 ))
               )}
+
+              {/* Terimler Sözlüğü */}
+              <GlossarySection />
 
               {/* Footer Note */}
               <motion.div

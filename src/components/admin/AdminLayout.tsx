@@ -11,6 +11,7 @@ import {
   Map,
   PanelLeftClose,
   PanelLeft,
+  BookOpen,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SessionTimeoutIndicator } from '@/components/admin/SessionTimeoutIndicator';
@@ -22,6 +23,7 @@ type TabType =
   | 'guncellemeler'
   | 'bildirimler'
   | 'kurallar'
+  | 'sozluk'
   | 'galeri'
   | 'canliharita'
   | 'kullanicilar'
@@ -38,6 +40,7 @@ const sidebarItems = [
   { id: 'guncellemeler' as TabType, label: 'Güncellemeler', icon: Bell, path: '/admin?tab=guncellemeler' },
   { id: 'bildirimler' as TabType, label: 'Bildirimler', icon: Bell, path: '/admin/notification-editor' },
   { id: 'kurallar' as TabType, label: 'Kurallar', icon: Shield, path: '/admin/rules-editor' },
+  { id: 'sozluk' as TabType, label: 'Terimler Sözlüğü', icon: BookOpen, path: '/admin/glossary-editor' },
   { id: 'galeri' as TabType, label: 'Medya Galeri', icon: ImageIcon, path: '/admin/gallery' },
   { id: 'canliharita' as TabType, label: 'Canlı Harita', icon: Map, path: '/admin/whiteboard-editor' },
   { id: 'kullanicilar' as TabType, label: 'Kullanıcılar', icon: Users, path: '/admin?tab=kullanicilar' },
@@ -47,6 +50,7 @@ const sidebarItems = [
 // Helper to detect active tab from location
 const getActiveTabFromPath = (pathname: string, search: string): TabType => {
   if (pathname === '/admin/rules-editor') return 'kurallar';
+  if (pathname === '/admin/glossary-editor') return 'sozluk';
   if (pathname === '/admin/gallery') return 'galeri';
   if (pathname === '/admin/whiteboard-editor') return 'canliharita';
   if (pathname === '/admin/manage-access') return 'yetkilendirme';

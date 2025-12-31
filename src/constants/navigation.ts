@@ -8,6 +8,7 @@ import {
   Map,
   Users,
   ShieldCheck,
+  BookOpen,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -18,6 +19,7 @@ export type AdminTabType =
   | 'guncellemeler' 
   | 'bildirimler' 
   | 'kurallar' 
+  | 'sozluk'
   | 'galeri' 
   | 'canliharita' 
   | 'kullanicilar' 
@@ -37,6 +39,7 @@ export const ADMIN_SIDEBAR_ITEMS: SidebarItem[] = [
   { id: 'guncellemeler', label: 'Güncellemeler', icon: Bell },
   { id: 'bildirimler', label: 'Bildirimler', icon: Bell, route: '/admin/notification-editor' },
   { id: 'kurallar', label: 'Kurallar', icon: Shield, route: '/admin/rules-editor' },
+  { id: 'sozluk', label: 'Terimler Sözlüğü', icon: BookOpen, route: '/admin/glossary-editor' },
   { id: 'galeri', label: 'Medya Galeri', icon: ImageIcon, route: '/admin/gallery' },
   { id: 'canliharita', label: 'Canlı Harita', icon: Map, route: '/admin/whiteboard-editor' },
   { id: 'kullanicilar', label: 'Kullanıcılar', icon: Users },
